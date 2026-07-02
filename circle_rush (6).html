@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circle Rush</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#07071a;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;font-family:'Segoe UI',system-ui,sans-serif;overflow-y:auto;padding:16px 0}
+.sr-only{position:absolute;width:1px;height:1px;clip:rect(0,0,0,0);overflow:hidden}
+button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
+
+/* ── WRAPPER ── */
+#W{position:relative;width:min(680px,96vw);aspect-ratio:1/1;max-height:92vh;background:#07071a;overflow:hidden;border-radius:16px;color:#fff;user-select:none;box-shadow:0 0 60px rgba(80,120,255,.18)}
+#BG{position:absolute;inset:0;width:100%;height:100%}
+
+/* ── SCREENS ── */
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;transition:opacity .38s ease}
+.hid{opacity:0!important;pointer-events:none!important}
+.ov{background:rgba(4,4,20,.97)}
+
+/* ── MENU ── */
+#logo{font-size:3.4rem;font-weight:900;background:linear-gradient(135deg,#6af 0%,#b6f 48%,#6df 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-1px;animation:glow 2.8s ease-in-out infinite,fsi .6s ease both}
+#tag{font-size:.78rem;letter-spacing:3.5px;color:rgba(255,255,255,.35);text-transform:uppercase;margin:9px 0 5px;animation:fsi .6s .1s ease both}
+#best{font-size:.82rem;color:rgba(180,210,255,.6);background:rgba(100,160,255,.08);border:1px solid rgba(100,160,255,.18);border-radius:20px;padding:3px 16px;margin-bottom:30px;min-height:24px;animation:fsi .6s .15s ease both}
+#mbts{display:flex;flex-direction:column;gap:11px;animation:fsi .6s .2s ease both}
+.mb{width:210px;padding:13px;border-radius:50px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:#fff;font-size:.9rem;font-weight:600;cursor:pointer;letter-spacing:.5px;transition:all .22s ease}
+.mb:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4);transform:scale(1.045) translateY(-2px)}
+.mb.play{background:linear-gradient(135deg,rgba(60,110,255,.44),rgba(120,60,255,.44));border-color:rgba(110,140,255,.55);font-size:1.05rem}
+.mb.play:hover{background:linear-gradient(135deg,rgba(60,110,255,.78),rgba(120,60,255,.78));border-color:rgba(150,175,255,.88)}
+
+/* ── MODE SELECT ── */
+#modeTitle{font-size:1.5rem;font-weight:900;margin-bottom:26px;letter-spacing:.5px;text-align:center;padding:0 20px}
+#modeRow{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;max-width:560px;padding:0 16px}
+.modeCard{width:152px;padding:24px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);cursor:pointer;text-align:center;transition:all .22s ease}
+.modeCard:hover{background:rgba(255,255,255,.14);transform:translateY(-5px) scale(1.045);border-color:rgba(255,255,255,.4)}
+.modeIco{font-size:2.3rem}
+.modeName{font-weight:800;margin-top:9px;font-size:.95rem;letter-spacing:.5px}
+.modeDesc{font-size:.7rem;color:rgba(255,255,255,.48);margin-top:7px;line-height:1.5}
+.modeCard.surv:hover{border-color:#ff4d6d;box-shadow:0 0 34px rgba(255,77,109,.32);background:rgba(255,60,90,.1)}
+.modeCard.arena:hover{border-color:#ffd23f;box-shadow:0 0 34px rgba(255,210,63,.32);background:rgba(255,190,40,.1)}
+
+/* ── ARENA (PVP) ── */
+#roomCodeDisplay{font-size:2rem;font-weight:900;letter-spacing:8px;color:#8ab4ff;text-shadow:0 0 20px rgba(120,170,255,.5);font-family:monospace}
+.roomCodeInput{text-align:center;letter-spacing:6px;text-transform:uppercase;font-weight:800;font-size:1.1rem}
+
+/* ── STREAK / GLOBAL STAT BADGES ── */
+#streakBadge{font-size:.72rem;color:#ffb347;background:rgba(255,150,50,.1);border:1px solid rgba(255,150,50,.22);border-radius:16px;padding:3px 13px;margin-bottom:8px;display:inline-block}
+#globalStat{font-size:.68rem;color:rgba(160,190,255,.5);margin-bottom:14px}
+
+/* ── HUD ── */
+#hdr{position:absolute;top:0;left:0;right:0;height:62px;display:flex;align-items:center;justify-content:space-around;padding:0 14px;background:rgba(5,5,21,.94);border-bottom:1px solid rgba(255,255,255,.06);z-index:5}
+.st{text-align:center;min-width:64px}
+.sl{font-size:.54rem;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.32);margin-bottom:2px}
+.sv{font-size:1.2rem;font-weight:700;transition:color .25s}
+.mono{font-family:monospace;color:#adf}
+#sc{color:#7af}
+#cb{color:rgba(255,255,255,.6)}
+#lv{color:#caf}
+#spd{color:#f86}
+#pb{width:32px;height:32px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font-size:.88rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
+#pb:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4)}
+.heart{color:#ff4d6d;font-size:1.05rem;margin:0 1px;display:inline-block;text-shadow:0 0 8px rgba(255,77,109,.6)}
+.heart.lost{color:rgba(255,255,255,.16);text-shadow:none}
+#shieldIcon{display:none;margin-left:3px;font-size:.95rem;filter:drop-shadow(0 0 6px rgba(100,210,255,.8))}
+
+/* ── ARENA ── */
+#arena{position:absolute;top:62px;bottom:0;left:0;right:0}
+#dangerOverlay{position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at center,transparent 48%,rgba(255,20,40,.55) 100%);opacity:0;will-change:opacity}
+#dangerOverlay.show{animation:dangerOpacity 1.1s ease-in-out infinite}
+#missFlash{position:absolute;inset:0;pointer-events:none;z-index:2;background:rgba(255,35,35,.35);opacity:0;will-change:opacity}
+@keyframes dangerOpacity{0%,100%{opacity:.08}50%{opacity:.38}}
+
+/* ── CIRCLE ── */
+#C{position:absolute;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;z-index:3;overflow:visible;opacity:0;transform:scale(0) rotate(-20deg);will-change:transform,opacity}
+
+/* ── PANELS ── */
+.pnl{background:rgba(9,11,30,.98);border:1px solid rgba(90,110,255,.16);border-radius:22px;padding:32px;width:330px;max-width:94%;max-height:88%;overflow-y:auto}
+.ptt{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:20px;color:#fff}
+.pb2{width:100%;padding:12px;border-radius:11px;border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.07);color:#fff;font-size:.88rem;font-weight:600;cursor:pointer;margin-top:9px;transition:all .2s}
+.pb2:hover{background:rgba(255,255,255,.14)}
+.pb2.prim{background:linear-gradient(135deg,rgba(60,110,255,.54),rgba(120,60,255,.54));border-color:rgba(110,140,255,.46)}
+.pb2.prim:hover{background:linear-gradient(135deg,rgba(60,110,255,.86),rgba(120,60,255,.86))}
+
+/* ── PINNED CLOSE BUTTON — always visible regardless of panel scroll ── */
+.closeX{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#fff;font-size:1.05rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.closeX:hover{background:rgba(255,80,80,.22);border-color:rgba(255,110,110,.5);transform:rotate(90deg)}
+
+/* ── SETTINGS ── */
+.row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05);gap:10px}
+.row:last-of-type{border-bottom:none}
+.row>span{font-size:.85rem;color:rgba(255,255,255,.76);white-space:nowrap}
+.tog{width:46px;height:24px;background:rgba(255,255,255,.15);border-radius:12px;cursor:pointer;position:relative;transition:background .3s;flex-shrink:0}
+.tog.on{background:#4a9eff}
+.tog::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left .3s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.tog.on::after{left:25px}
+.dg{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.db{padding:5px 10px;border-radius:15px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.58);font-size:.72rem;cursor:pointer;transition:all .18s;white-space:nowrap}
+.db.act{background:#4a9eff;border-color:#4a9eff;color:#fff}
+.db:hover:not(.act){background:rgba(255,255,255,.1);color:#fff}
+.sec{font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(120,160,255,.55);margin:14px 0 2px;font-weight:700}
+.sec:first-child{margin-top:0}
+
+/* ── HOW TO PLAY ── */
+.htps{display:flex;flex-direction:column;gap:10px}
+.htp{display:flex;align-items:center;gap:11px;font-size:.8rem;color:rgba(255,255,255,.78);line-height:1.5}
+.hi{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.92rem;flex-shrink:0;background:rgba(255,255,255,.1)}
+
+/* ── LEADERBOARD TABS ── */
+.lbTab{flex:1;padding:9px;border-radius:11px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);color:rgba(255,255,255,.52);font-size:.8rem;cursor:pointer;transition:all .18s;white-space:nowrap}
+.lbTab.act{background:rgba(100,155,255,.32);border-color:rgba(120,175,255,.55);color:#fff;font-weight:700}
+.lbRow{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:9px;margin-bottom:5px;background:rgba(255,255,255,.04)}
+.lbRow.me{background:rgba(100,155,255,.14);border:1px solid rgba(120,175,255,.28)}
+.lbRank{width:26px;text-align:center;font-size:.88rem;color:rgba(255,255,255,.32);flex-shrink:0}
+.lbName{font-weight:700;color:#fff;font-size:.9rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbScore{font-weight:800;color:#7af;font-size:1rem;flex-shrink:0}
+.lbTime{font-size:.7rem;color:rgba(255,255,255,.38);font-family:monospace;flex-shrink:0}
+.lbMe{font-size:.6rem;color:#adf;background:rgba(100,180,255,.22);border-radius:8px;padding:1px 6px;flex-shrink:0}
+@keyframes ldSpin{to{transform:rotate(360deg)}}
+.lbLoading{display:flex;align-items:center;justify-content:center;padding:30px 0;gap:10px;color:rgba(255,255,255,.35);font-size:.85rem}
+.lbLoading::before{content:'';width:20px;height:20px;border-radius:50%;border:2.5px solid rgba(255,255,255,.15);border-top-color:#8ab4ff;animation:ldSpin .75s linear infinite;flex-shrink:0}
+
+/* ── NAME ENTRY INPUT ── */
+.nameInput{width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid rgba(100,150,255,.4);background:rgba(255,255,255,.07);color:#fff;font-size:1rem;outline:none;font-family:'Segoe UI',system-ui,sans-serif;transition:border-color .2s;margin-bottom:6px}
+.nameInput:focus{border-color:rgba(130,180,255,.75)}
+
+/* ── GAME OVER ── */
+#goEmoji{font-size:2.6rem;margin-bottom:4px;text-align:center}
+#goBadge{display:none;font-size:.72rem;color:#ffd700;font-weight:800;letter-spacing:1px;margin-bottom:8px;text-align:center}
+#goScore{font-size:2.7rem;font-weight:900;color:#7af;margin:6px 0 2px;text-align:center}
+#goSub{font-size:.7rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:18px;text-align:center}
+.goStats{display:flex;justify-content:space-around;margin-bottom:18px}
+
+/* ── SHARE CARD ── */
+#shareCardWrap{border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:0 10px 36px rgba(0,0,0,.55);background:rgba(255,255,255,.03);min-height:120px;display:flex;align-items:center;justify-content:center}
+#shareCardImg{width:100%;display:block}
+#shareSpin{width:30px;height:30px;border-radius:50%;border:3px solid rgba(255,255,255,.15);border-top-color:#8ab4ff;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── CURSOR TRAIL (cosmetic, never affects real clicking) ── */
+#cursorGlow{
+  position:absolute;top:0;left:0;width:34px;height:34px;border-radius:50%;
+  background:radial-gradient(circle,rgba(130,180,255,.55) 0%,rgba(170,110,255,.22) 55%,transparent 75%);
+  pointer-events:none;z-index:50;opacity:0;transform:translate(-50%,-50%);
+  will-change:transform,opacity;transition:opacity .3s ease
+}
+#cursorGlow.show{opacity:1}
+#cursorDot{
+  position:absolute;top:0;left:0;width:6px;height:6px;border-radius:50%;
+  background:#fff;pointer-events:none;z-index:51;opacity:0;transform:translate(-50%,-50%);
+  box-shadow:0 0 8px rgba(255,255,255,.9);will-change:transform,opacity;transition:opacity .3s ease
+}
+#cursorDot.show{opacity:.9}
+
+/* ── KEYFRAMES ── */
+@keyframes fsi{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glow{0%,100%{filter:drop-shadow(0 0 18px rgba(100,150,255,.38))}50%{filter:drop-shadow(0 0 36px rgba(160,100,255,.72))}}
+@keyframes cPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.046)}}
+@keyframes bPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+@keyframes xPulse{0%,100%{transform:scale(1) rotate(-3deg)}50%{transform:scale(1.14) rotate(3deg)}}
+
+/* ── GOLDEN RUSH EVENT ── */
+#goldenOverlay{position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at center,rgba(255,210,60,.16),transparent 72%);opacity:0;transition:opacity .4s ease}
+#goldenOverlay.show{opacity:1}
+#goldenBanner{position:absolute;top:10px;left:50%;transform:translateX(-50%) translateY(-70px);background:linear-gradient(135deg,#ffd700,#ff8c00);color:#3a2400;font-weight:900;font-size:.85rem;padding:8px 20px;border-radius:20px;box-shadow:0 6px 24px rgba(255,180,0,.55);z-index:8;opacity:0;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s;pointer-events:none;white-space:nowrap}
+#goldenBanner.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── CONFETTI ── */
+#confettiCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:100}
+
+/* ── STREAMER MODE ── */
+@keyframes streamerGlow{0%,100%{box-shadow:0 0 60px rgba(120,170,255,.28)}50%{box-shadow:0 0 95px rgba(255,110,199,.4)}}
+#W.streamer{animation:streamerGlow 4s ease-in-out infinite}
+</style>
+</head>
+<body>
+<h2 class="sr-only">Circle Rush — game nhấp vào hình tròn để ghi điểm, có chế độ Sinh Tồn 3 mạng</h2>
+
+<div id="W">
+<canvas id="BG"></canvas>
+<div id="cursorGlow"></div>
+<div id="cursorDot"></div>
+<canvas id="confettiCanvas"></canvas>
+
+<!-- ════ MENU ════ -->
+<div class="scr" id="s0">
+  <div id="logo">⊙ CIRCLE RUSH</div>
+  <div id="tag">tap · click · score</div>
+  <div id="best"></div>
+  <div id="streakBadge" style="display:none"></div>
+  <div id="globalStat"></div>
+  <div id="mbts">
+    <button class="mb play" onclick="G.view('modesel')">▶&nbsp;&nbsp;PLAY</button>
+    <button class="mb" onclick="G.view('how')">?&nbsp;&nbsp;HOW TO PLAY</button>
+    <button class="mb" onclick="G.view('lb')">⊞&nbsp;&nbsp;LEADERBOARD</button>
+    <button class="mb" onclick="G.view('cfg')">⚙&nbsp;&nbsp;SETTINGS</button>
+  </div>
+</div>
+
+<!-- ════ MODE SELECT ════ -->
+<div class="scr hid" id="s6">
+  <div id="modeTitle">CHỌN CHẾ ĐỘ CHƠI</div>
+  <div id="modeRow">
+    <div class="modeCard" onclick="G.go('classic')">
+      <div class="modeIco">♾️</div>
+      <div class="modeName">VÔ TẬN</div>
+      <div class="modeDesc">Chơi thoải mái,<br>không giới hạn mạng</div>
+    </div>
+    <div class="modeCard surv" onclick="G.go('survival')">
+      <div class="modeIco">❤️</div>
+      <div class="modeName">SINH TỒN</div>
+      <div class="modeDesc">3 mạng. Càng lâu<br>càng nhanh, cực gắt!</div>
+    </div>
+    <div class="modeCard arena" onclick="G.view('arenaLobby')">
+      <div class="modeIco">⚔️</div>
+      <div class="modeName">PVP</div>
+      <div class="modeDesc">Đấu bạn bè,<br>45s một lượt!</div>
+    </div>
+  </div>
+  <button class="mb" style="margin-top:30px" onclick="G.view('menu')">← QUAY LẠI</button>
+</div>
+
+<!-- ════ PLAY ════ -->
+<div class="scr hid" id="s1">
+  <div id="hdr">
+    <div class="st" id="stScore"><div class="sl">SCORE</div><div class="sv" id="sc">0</div></div>
+    <div class="st" id="stTime"><div class="sl" id="tmLabel">TIME</div><div class="sv mono" id="tm">00:00</div></div>
+    <div class="st" id="stLevel"><div class="sl">LEVEL</div><div class="sv" id="lv">1</div></div>
+    <div class="st" id="stSpeed" style="display:none"><div class="sl">SPEED</div><div class="sv" id="spd">×1.0</div></div>
+    <div class="st" id="stHearts" style="display:none"><div class="sl">LIVES</div>
+      <div class="sv" id="hearts">
+        <span class="heart">♥</span><span class="heart">♥</span><span class="heart">♥</span><span id="shieldIcon">🛡️</span>
+      </div>
+    </div>
+    <div class="st"><div class="sl">COMBO</div><div class="sv" id="cb">×1</div></div>
+    <button id="pb" onclick="G.pause()" aria-label="Pause">⏸</button>
+  </div>
+  <div id="arena">
+    <div id="dangerOverlay"></div>
+    <div id="goldenOverlay"></div>
+    <div id="missFlash"></div>
+    <div id="goldenBanner">⚡ GOLDEN RUSH ×2! <span id="goldenTimer">6</span>s</div>
+    <div id="C" onclick="G.click(event)">
+      <svg id="ring" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;position:absolute;pointer-events:none"></svg>
+      <span id="Ctxt" style="position:relative;z-index:1;pointer-events:none"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PAUSE ════ -->
+<div class="scr hid ov" id="s2">
+  <div class="pnl" style="text-align:center">
+    <div class="ptt">⏸ PAUSED</div>
+    <div style="font-size:.85rem;color:rgba(255,255,255,.42);margin-bottom:18px">Hít thở đi — điểm vẫn còn đó!</div>
+    <button class="pb2 prim" onclick="G.resume()">▶&nbsp; RESUME</button>
+    <button class="pb2" onclick="G.openShareCard()">📸&nbsp; CHIA SẺ ĐIỂM</button>
+    <button class="pb2" id="pauseMenuBtn" onclick="G.menu()">⌂&nbsp; MAIN MENU</button>
+  </div>
+</div>
+
+<!-- ════ GAME OVER (Survival) ════ -->
+<div class="scr hid ov" id="s7">
+  <div class="pnl">
+    <div id="goEmoji">💔</div>
+    <div class="ptt" style="margin-bottom:4px">GAME OVER</div>
+    <div id="goBadge">🏆 KỶ LỤC MỚI!</div>
+    <div id="goScore">0</div>
+    <div id="goSub">điểm số</div>
+    <div class="goStats">
+      <div><div class="sl">THỜI GIAN</div><div style="font-weight:700;font-family:monospace;color:#adf" id="goTime">00:00</div></div>
+      <div><div class="sl">COMBO CAO NHẤT</div><div style="font-weight:700;color:#fa8" id="goCombo">×1</div></div>
+    </div>
+    <button class="pb2 prim" onclick="G.go('survival')">🔁&nbsp; CHƠI LẠI</button>
+    <button class="pb2" onclick="G.openShareCard()">📸&nbsp; CHIA SẺ ĐIỂM</button>
+    <button class="pb2" onclick="G.menu()">⌂&nbsp; TRANG CHỦ</button>
+  </div>
+</div>
+
+<!-- ════ SHARE CARD ════ -->
+<div class="scr hid ov" id="s8">
+  <button class="closeX" onclick="G.closeShare()">✕</button>
+  <div class="pnl">
+    <div class="ptt" style="margin-bottom:14px;font-size:1.22rem">📸 THẺ THÀNH TÍCH</div>
+    <div id="shareCardWrap"><div id="shareSpin"></div><img id="shareCardImg" style="display:none" alt="Circle Rush score card"/></div>
+    <button class="pb2 prim" id="shareNativeBtn" onclick="G.shareCardNative()">📤&nbsp; CHIA SẺ MẠNG XÃ HỘI</button>
+    <button class="pb2" onclick="G.downloadCard()">⬇️&nbsp; TẢI ẢNH VỀ</button>
+    <button class="pb2" onclick="G.closeShare()">✕&nbsp; ĐÓNG</button>
+  </div>
+</div>
+
+<!-- ════ SETTINGS ════ -->
+<div class="scr hid ov" id="s3">
+  <button class="closeX" onclick="G.view('menu')">✕</button>
+  <div class="pnl">
+    <div class="ptt">⚙ SETTINGS</div>
+
+    <div class="sec">Tài khoản</div>
+    <div class="row" style="flex-direction:column;align-items:flex-start;gap:6px;padding-bottom:14px">
+      <span>Tên người chơi</span>
+      <div style="display:flex;align-items:center;gap:8px;width:100%">
+        <span id="playerNameVal" style="color:#adf;font-weight:700;font-size:1rem;flex:1;overflow:hidden;text-overflow:ellipsis">—</span>
+        <button class="db" style="font-size:.78rem;padding:6px 14px" onclick="G.view('nameentry')">✏️ Đổi tên</button>
+      </div>
+    </div>
+
+    <div class="sec">Gameplay</div>
+    <div class="row"><span>Sound Effects</span>
+      <div class="tog on" id="togS" onclick="G.togSound(this)"></div>
+    </div>
+    <div class="row"><span>Difficulty (Vô Tận)</span>
+      <div class="dg">
+        <button class="db" data-dif="easy" onclick="G.setDif(this)">Easy</button>
+        <button class="db act" data-dif="med" onclick="G.setDif(this)">Med</button>
+        <button class="db" data-dif="hard" onclick="G.setDif(this)">Hard</button>
+      </div>
+    </div>
+    <div class="row"><span>Next delay</span>
+      <div class="dg">
+        <button class="db" data-nd="0" onclick="G.setND(this)">Instant</button>
+        <button class="db act" data-nd="220" onclick="G.setND(this)">Normal</button>
+        <button class="db" data-nd="450" onclick="G.setND(this)">Slow</button>
+      </div>
+    </div>
+
+    <div class="sec">Chuột & Hiệu ứng</div>
+    <div class="row"><span>Cursor Trail</span>
+      <div class="tog on" id="togCur" onclick="G.togCursor(this)"></div>
+    </div>
+    <div class="row"><span>Tốc độ mượt chuột</span>
+      <div class="dg">
+        <button class="db" data-cur="1" onclick="G.setCurSpeed(this)">Nhanh</button>
+        <button class="db" data-cur=".32" onclick="G.setCurSpeed(this)">Mượt</button>
+        <button class="db act" data-cur=".15" onclick="G.setCurSpeed(this)">Siêu mượt</button>
+        <button class="db" data-cur=".055" onclick="G.setCurSpeed(this)">Mượt x100</button>
+      </div>
+    </div>
+
+    <div class="sec">Hiệu năng</div>
+    <div class="row"><span>⚡ Siêu mượt cho máy yếu</span>
+      <div class="tog" id="togPerf" onclick="G.togPerf(this)"></div>
+    </div>
+
+    <div class="sec">Streamer</div>
+    <div class="row"><span>🎥 Chế độ Streamer (hiệu ứng to hơn)</span>
+      <div class="tog" id="togStreamer" onclick="G.togStreamer(this)"></div>
+    </div>
+
+    <button class="pb2 prim" style="margin-top:20px" onclick="G.view('menu')">← BACK</button>
+  </div>
+</div>
+
+<!-- ════ HOW TO PLAY ════ -->
+<div class="scr hid ov" id="s4">
+  <button class="closeX" onclick="G.view('menu')">✕</button>
+  <div class="pnl" style="width:380px">
+    <div class="ptt">? HOW TO PLAY</div>
+    <div class="htps">
+      <div class="htp"><span class="hi" style="background:radial-gradient(#88c8ff,#1a3ecc)">⊙</span><div><b>Tròn xanh</b> — nhấp trước khi vòng đếm đầy để +1 điểm</div></div>
+      <div class="htp"><span class="hi" style="background:radial-gradient(#ffb488,#cc3311)">⊙</span><div><b>Tròn cam</b> (nhỏ & nhanh hơn) — +2 điểm</div></div>
+      <div class="htp"><span class="hi" style="background:radial-gradient(#fff066,#cc8800)">★</span><div><b>Sao vàng</b> — hiếm, biến mất rất nhanh — +5 điểm</div></div>
+      <div class="htp"><span class="hi" style="background:radial-gradient(#ff6ec7,#8b00ff)">👑</span><div><b>BOSS</b> — cực hiếm, biến mất siêu nhanh — +15 điểm, rung màn hình!</div></div>
+      <div class="htp"><span class="hi" style="background:radial-gradient(#ff8fa8,#d6004f)">♥</span><div><b>Tim hồng</b> (chỉ ở Sinh Tồn) — hồi 1 mạng, hoặc +bonus nếu đã đầy máu</div></div>
+      <div class="htp"><span class="hi" style="color:#ffd700;background:rgba(255,210,60,.16)">⚡</span><div><b>GOLDEN RUSH</b> — sự kiện ngẫu nhiên, x2 điểm trong 6 giây!</div></div>
+      <div class="htp"><span class="hi" style="color:#adf;background:rgba(100,180,255,.14)">⚡</span><div>Nhấp liên tiếp nhanh để tăng <b>combo</b> nhân điểm</div></div>
+      <div class="htp"><span class="hi" style="color:#6df;background:rgba(100,200,255,.14)">🛡️</span><div>Đạt combo ×6 trong Sinh Tồn → nhận <b>khiên</b>, đỡ 1 lần mất mạng</div></div>
+      <div class="htp"><span class="hi" style="color:#f88;background:rgba(255,80,80,.14)">✕</span><div>Bỏ lỡ hoặc <b>bấm hụt</b> ra ngoài đều mất mạng (Sinh Tồn) / reset combo (Vô Tận)</div></div>
+      <div class="htp"><span class="hi" style="color:#fa6;background:rgba(255,150,60,.14)">❤️</span><div><b>Sinh Tồn</b>: 3 mạng, hết mạng là thua. Càng chơi lâu, tròn biến mất càng nhanh!</div></div>
+      <div class="htp"><span class="hi" style="color:#ffd23f;background:rgba(255,210,63,.14)">⚔️</span><div><b>PVP</b>: tạo/vào phòng bằng mã, mỗi người chơi 45 giây — điểm cao nhất thắng phòng!</div></div>
+      <div class="htp"><span class="hi" style="color:#ffd700;background:rgba(255,215,0,.14)">🌍</span><div>Vượt qua kỷ lục của <b>TẤT CẢ</b> mọi người trong 1 chế độ → ăn mừng Kỷ Lục Thế Giới!</div></div>
+    </div>
+    <button class="pb2 prim" style="margin-top:20px" onclick="G.view('menu')">← BACK</button>
+  </div>
+</div>
+
+<!-- ════ LEADERBOARD ════ -->
+<div class="scr hid ov" id="s5">
+  <button class="closeX" onclick="G.view('menu')">✕</button>
+  <div class="pnl" style="width:380px">
+    <div class="ptt" style="margin-bottom:14px">⊞ BẢNG XẾP HẠNG</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="lbTab act" id="tabClassic" onclick="G.switchLBTab('classic')">♾️ Vô Tận</button>
+      <button class="lbTab" id="tabSurvival" onclick="G.switchLBTab('survival')">❤️ Sinh Tồn</button>
+    </div>
+    <div style="min-height:130px;max-height:340px;overflow-y:auto;overflow-x:hidden" id="lbc"></div>
+    <div style="font-size:.62rem;color:rgba(255,255,255,.22);text-align:center;margin-top:8px">
+      Xếp theo điểm cao nhất · thời gian lâu nhất là tiebreaker
+    </div>
+    <button class="pb2 prim" style="margin-top:12px" onclick="G.view('menu')">← QUAY LẠI</button>
+  </div>
+</div>
+
+<!-- ════ PVP ARENA LOBBY ════ -->
+<div class="scr hid" id="s10">
+  <button class="closeX" onclick="G.view('modesel')">✕</button>
+  <div class="pnl" style="text-align:center">
+    <div style="font-size:2.4rem">⚔️</div>
+    <div class="ptt">ĐẤU TRƯỜNG PVP</div>
+    <div style="font-size:.78rem;color:rgba(255,255,255,.48);margin-bottom:20px;line-height:1.65">
+      Tạo phòng rồi gửi mã cho bạn bè, hoặc nhập mã để tham chiến!<br>
+      Mỗi người chơi <b>1 lượt 45 giây</b> — ai điểm cao nhất thắng.
+    </div>
+    <button class="pb2 prim" onclick="G.createRoom()">➕ TẠO PHÒNG MỚI</button>
+    <div style="margin:16px 0 10px;font-size:.68rem;color:rgba(255,255,255,.3);letter-spacing:1px">— HOẶC —</div>
+    <input id="roomCodeInput" class="nameInput roomCodeInput" maxlength="5" placeholder="NHẬP MÃ"
+      onkeydown="if(event.key==='Enter')G.joinRoom()"/>
+    <button class="pb2" onclick="G.joinRoom()">🔑 THAM GIA PHÒNG</button>
+  </div>
+</div>
+
+<!-- ════ PVP ARENA ROOM ════ -->
+<div class="scr hid ov" id="s11">
+  <button class="closeX" onclick="G.leaveRoom()">✕</button>
+  <div class="pnl" style="width:380px">
+    <div class="ptt" style="margin-bottom:14px">⚔️ PHÒNG ĐẤU</div>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:.64rem;color:rgba(255,255,255,.4);letter-spacing:1px;margin-bottom:6px">MÃ PHÒNG — CHIA SẺ CHO BẠN BÈ</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+        <div id="roomCodeDisplay">-----</div>
+        <button class="db" style="font-size:.75rem;padding:7px 12px" onclick="G.copyRoomCode()">📋 Copy</button>
+      </div>
+    </div>
+    <div id="roomLB" style="min-height:100px;max-height:250px;overflow-y:auto"></div>
+    <button class="pb2 prim" style="margin-top:14px" onclick="G.startArenaRun()">▶ VÀO TRẬN (45 GIÂY)</button>
+    <button class="pb2" onclick="G.leaveRoom()">← RỜI PHÒNG</button>
+  </div>
+</div>
+
+<!-- ════ NAME ENTRY ════ -->
+<div class="scr hid ov" id="s9">
+  <div class="pnl" style="text-align:center">
+    <div style="font-size:2.6rem;margin-bottom:6px">👋</div>
+    <div class="ptt">CHÀO MỪNG!</div>
+    <div style="font-size:.85rem;color:rgba(255,255,255,.48);margin-bottom:22px;line-height:1.6">
+      Đặt tên để xuất hiện trên<br>bảng xếp hạng toàn cầu!
+    </div>
+    <input id="nameInput" class="nameInput" type="text" maxlength="20" placeholder="Tên của bạn..."
+      onkeydown="if(event.key==='Enter')G.confirmName()"/>
+    <div style="font-size:.68rem;color:rgba(255,255,255,.28);margin-bottom:18px">Tối đa 20 ký tự · có thể đổi sau trong Settings</div>
+    <button class="pb2 prim" onclick="G.confirmName()">🎮 VÀO CHƠI!</button>
+    <button class="pb2" onclick="G.skipName()">→ Bỏ qua (Ẩn danh)</button>
+  </div>
+</div>
+
+</div><!-- #W -->
+
+<script>
+const _=id=>document.getElementById(id);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ════════════════════════════════════════════
+   STORE — unified async key-value storage.
+   ▸ In Claude artifact: uses window.storage
+     (true cross-session, cross-device persistence
+     built into the artifact sandbox).
+   ▸ Anywhere else (file://, CDN host, etc.):
+     falls back to localStorage so the game still
+     works offline with device-local persistence.
+
+   Personal keys (shared=false):  player ID, name.
+   Shared   keys (shared=true ):  global leaderboards
+     visible to every player who opens this artifact.
+════════════════════════════════════════════ */
+const STORE = (() => {
+  const ws = typeof window !== 'undefined' && !!window.storage;
+  const safe = async (fn, def=null) => { try { return await fn(); } catch { return def; } };
+
+  return {
+    /* personal — tied to this browser / artifact user */
+    async getP(k, def=null) {
+      if (ws) return safe(async()=>{ const r=await window.storage.get(k); return r?JSON.parse(r.value):def; }, def);
+      try { const v=localStorage.getItem('crp_'+k); return v!=null?JSON.parse(v):def; } catch { return def; }
+    },
+    async setP(k, v) {
+      if (ws) { safe(()=>window.storage.set(k, JSON.stringify(v))); return; }
+      try { localStorage.setItem('crp_'+k, JSON.stringify(v)); } catch {}
+    },
+    /* shared — visible to ALL players of this artifact */
+    async getS(k, def=null) {
+      if (ws) return safe(async()=>{ const r=await window.storage.get(k,true); return r?JSON.parse(r.value):def; }, def);
+      try { const v=localStorage.getItem('crs_'+k); return v!=null?JSON.parse(v):def; } catch { return def; }
+    },
+    async setS(k, v) {
+      if (ws) { safe(()=>window.storage.set(k, JSON.stringify(v), true)); return; }
+      try { localStorage.setItem('crs_'+k, JSON.stringify(v)); } catch {}
+    }
+  };
+})();
+
+/* ════════════════════════════════════════════
+   PLAYER — persistent identity + leaderboard.
+
+   Identity: a UUID generated once and stored as
+   a personal key.  Never changes unless the user
+   clears browser data.  Guarantees each player
+   has exactly ONE row per mode in the leaderboard
+   (their old entry is replaced, never duplicated).
+
+   Ranking algorithm (same for both modes):
+   1. Score DESC  — primary: more points = better
+   2. Time  DESC  — tiebreaker: surviving longer
+      under increasingly fast circles is harder,
+      so equal-score players who lasted longer rank
+      higher.  This rewards both speed AND endurance.
+════════════════════════════════════════════ */
+const PLAYER = {
+  id: null, name: null,
+
+  async init() {
+    /* Load or generate a permanent UUID for this player */
+    this.id = await STORE.getP('pid');
+    if (!this.id) {
+      this.id = (typeof crypto!=='undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2)+Date.now().toString(36);
+      await STORE.setP('pid', this.id);
+    }
+    this.name = await STORE.getP('pname');
+    const el = _('playerNameVal');
+    if (el) el.textContent = this.name || '—';
+
+    /* Load personal bests to show on menu badge */
+    const [cbest, sbest] = await Promise.all([
+      STORE.getP('pbest_classic', {score:0,time:0}),
+      STORE.getP('pbest_survival',{score:0,time:0})
+    ]);
+    const top = Math.max(cbest.score, sbest.score);
+    if (top > 0) { const b=_('best'); if(b) b.textContent = `Best: ${top} pts`; }
+
+    /* Daily streak — a simple FOMO/return-loop hook.
+       Compares last-played calendar date to today:
+       consecutive day → streak+1, same day → unchanged,
+       gap → resets to 1. Stored as YYYY-MM-DD strings so
+       comparison is timezone-stable per device. */
+    const todayStr = new Date().toISOString().slice(0,10);
+    const streakData = await STORE.getP('pstreak', {count:0, lastDate:null});
+    if (streakData.lastDate !== todayStr) {
+      const y = new Date(Date.now()-86400000).toISOString().slice(0,10);
+      streakData.count = (streakData.lastDate === y) ? streakData.count+1 : 1;
+      streakData.lastDate = todayStr;
+      await STORE.setP('pstreak', streakData);
+    }
+    const sEl=_('streakBadge');
+    if (sEl && streakData.count>1) {
+      sEl.textContent = `🔥 Chuỗi ${streakData.count} ngày liên tiếp!`;
+      sEl.style.display = 'inline-block';
+    }
+
+    loadGlobalStat();
+
+    if (!this.name) G.view('nameentry');
+    else G.view('menu');
+  },
+
+  async setName(name) {
+    name = (name||'').trim().slice(0,20) || 'Ẩn danh';
+    this.name = name;
+    await STORE.setP('pname', name);
+    const el = _('playerNameVal');
+    if (el) el.textContent = name;
+    /* Propagate new name into any existing leaderboard entries */
+    for (const mode of ['classic','survival']) {
+      const lb = await STORE.getS('lb_'+mode, {});
+      if (lb[this.id]) { lb[this.id].name = name; await STORE.setS('lb_'+mode, lb); }
+    }
+  },
+
+  /* Submit score.  Only updates this player's entry if the new result
+     is strictly better (score higher, or same score but longer time). */
+  /* Submit score.  Only updates this player's entry if the new result
+     is strictly better (score higher, or same score but longer time).
+     Returns {isPersonalBest, isWorldRecord} so the caller can trigger
+     celebratory confetti/toasts without this module knowing about UI. */
+  async submit(mode, score, time) {
+    if (!this.id) return {isPersonalBest:false, isWorldRecord:false};
+
+    /* Update personal best */
+    const pbKey = 'pbest_'+mode;
+    const prev = await STORE.getP(pbKey, {score:0,time:0});
+    const isPersonalBest = score > prev.score || (score === prev.score && time > prev.time && score>0);
+    if (isPersonalBest) {
+      await STORE.setP(pbKey, {score, time});
+      const allBest = Math.max(score,
+        (await STORE.getP('pbest_'+(mode==='classic'?'survival':'classic'),{score:0})).score);
+      const b=_('best'); if(b) b.textContent = `Best: ${Math.max(score, allBest)} pts`;
+    }
+
+    /* Update global leaderboard — read → merge → write */
+    const lb = await STORE.getS('lb_'+mode, {});
+    const existing = lb[this.id];
+    const shouldWrite = !existing || score > existing.score
+                     || (score === existing.score && time > existing.time);
+
+    let isWorldRecord = false;
+    if (shouldWrite) {
+      /* World record = beats every OTHER player's best in this mode
+         (excluding this player's own previous entry). */
+      let topOthers = 0;
+      for (const [id, e] of Object.entries(lb)) {
+        if (id !== this.id && e.score > topOthers) topOthers = e.score;
+      }
+      isWorldRecord = score > topOthers && score > 0;
+
+      lb[this.id] = {
+        name: this.name || 'Ẩn danh',
+        score, time,
+        date: new Date().toLocaleDateString('vi-VN')
+      };
+      await STORE.setS('lb_'+mode, lb);
+    }
+
+    return {isPersonalBest, isWorldRecord};
+  },
+
+  /* Return sorted entries for leaderboard display.
+     Sorting: score DESC, then time DESC as tiebreaker. */
+  async getLB(mode) {
+    const lb = await STORE.getS('lb_'+mode, {});
+    return Object.entries(lb)
+      .map(([id, e]) => ({ ...e, isMe: id === this.id }))
+      .sort((a, b) => b.score - a.score || b.time - a.time);
+  }
+};
+
+
+
+/* ════════════════════════════════════════════
+   GLOBAL STATS — social-proof counter shown on
+   the menu ("X lượt chơi trên toàn thế giới").
+   Best-effort read-modify-write on a shared key;
+   under heavy concurrent writes the count can
+   under-report slightly (no atomic increment in
+   this storage API), which is an acceptable
+   trade-off for a cosmetic social-proof counter.
+════════════════════════════════════════════ */
+async function loadGlobalStat(){
+  const s = await STORE.getS('global_stats', {plays:0});
+  const el=_('globalStat');
+  if(el) el.textContent = `🌍 ${(s.plays||0).toLocaleString('vi-VN')} lượt chơi trên toàn thế giới`;
+}
+async function bumpGlobalPlays(){
+  try{
+    const s = await STORE.getS('global_stats', {plays:0});
+    s.plays = (s.plays||0)+1;
+    await STORE.setS('global_stats', s);
+    const el=_('globalStat');
+    if(el) el.textContent = `🌍 ${s.plays.toLocaleString('vi-VN')} lượt chơi trên toàn thế giới`;
+  }catch(e){}
+}
+
+/* ════════════════════════════════════════════
+   ARENA — asynchronous PvP via shared room codes.
+
+   Honest technical note: this environment has no
+   realtime backend (no WebSocket/game server), so
+   "PvP" here means a SHARED CHALLENGE ROOM rather
+   than live simultaneous cursors. Mechanically:
+   1. One player creates a room → gets a 5-char code.
+   2. Anyone with the code can join the same room.
+   3. Each player plays their own ONE 45-second run
+      (identical fixed difficulty curve for everyone
+      — completely decoupled from personal Settings,
+      so nobody can pick "Easy" to cheese the ranking).
+   4. Scores post to a shared leaderboard for that
+      room code, polled every few seconds so results
+      feel live while players are viewing the room.
+   Ranking: score DESC, then best combo DESC.
+════════════════════════════════════════════ */
+const ARENA = {
+  code: null,
+
+  genCode(){
+    const chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O/1/I/L ambiguity
+    let c=''; for(let i=0;i<5;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+    return c;
+  },
+
+  async create(){
+    const code=this.genCode();
+    await STORE.setS('arena_room:'+code, { host: PLAYER.name||'Ẩn danh', createdAt: Date.now() });
+    this.code=code;
+    return code;
+  },
+
+  async exists(code){
+    const r = await STORE.getS('arena_room:'+code, null);
+    return !!r;
+  },
+
+  /* Only overwrite this player's row if the new run is strictly better. */
+  async submit(code, score, bestCombo){
+    if(!PLAYER.id || !code) return;
+    const key='arena_scores:'+code;
+    const scores = await STORE.getS(key, {});
+    const existing = scores[PLAYER.id];
+    const better = !existing || score>existing.score || (score===existing.score && bestCombo>existing.bestCombo);
+    if(better){
+      scores[PLAYER.id] = { name: PLAYER.name||'Ẩn danh', score, bestCombo, ts: Date.now() };
+      await STORE.setS(key, scores);
+    }
+  },
+
+  async getLB(code){
+    if(!code) return [];
+    const scores = await STORE.getS('arena_scores:'+code, {});
+    return Object.entries(scores)
+      .map(([id,e])=>({...e, isMe:id===PLAYER.id}))
+      .sort((a,b)=>b.score-a.score || (b.bestCombo||0)-(a.bestCombo||0));
+  }
+};
+
+/* ════════════════════════════════════════════
+   GAME ENGINE
+   • ONE persistent AudioContext (never recreated)
+   • Web Animations API instead of forced-reflow hacks
+   • Pooled particle / popup DOM nodes (zero GC churn)
+   • Position cached at spawn time (no layout reads on click)
+   • Survival mode: 3 hearts, time-driven accelerating speed
+════════════════════════════════════════════ */
+const G={
+  /* ── Runtime state ── */
+  s:'menu', mode:'classic',
+  score:0, time:0, level:1, combo:1, lct:0, cpa:0, bestCombo:0,
+  hearts:3, shielded:false, scoreSaved:false, survBest:0, perf:false, streamerMode:false,
+  goldenActive:false, _goldenTick:null, _isWorldRecordRun:false,
+  _circAnim:null,   // explicit animation ref — the ONLY way to reliably cancel WAAPI
+
+  /* ── ANTI-EXPLOIT: circle click state ── */
+  cActive:false,
+  cClickable:false,
+  cTO:null, cRAF:null, cCirc:0, gTO:null, hbInterval:null,
+
+  /* ── Cached spawn position (avoids getBoundingClientRect on click) ── */
+  curCX:0, curCY:0, curCenterX:0, curCenterY:0,
+
+  /* ── Settings ── */
+  sound:true, dif:'med', nd:220,
+
+  /* ── Persistent audio context (created ONCE, on first user gesture) ── */
+  ac:null,
+
+  /* ── Object pools ── */
+  partPool:[], partIdx:0, PART_N:20,
+  popPool:[], popIdx:0, POP_N:4,
+
+  /* ── Leaderboard tab state ── */
+  lbTab:'classic',
+  ct:null,
+
+  /* ── PvP Arena state ── */
+  roomCode:null, arenaTimeLeft:45, _roomPoll:null,
+
+  /* ── Cursor trail (cosmetic, never touches click hit-testing) ── */
+  CUR:{x:0,y:0,tx:0,ty:0,k:.15,on:true,init:false},
+
+  /* ── Difficulty: base ms, minimum ms, subtract per level (Classic mode) ── */
+  DIFS:{
+    easy:{b:4200,m:2200,d:70},
+    med: {b:2800,m:1100,d:100},
+    hard:{b:1600,m:600, d:60}
+  },
+
+  /* ── Circle types: id, size, points, gradient, shadow, ring color, spawn weight ── */
+  TYPES:[
+    {id:'n',sz:82,pt:1,bg:'radial-gradient(circle at 35% 30%,#88c8ff,#1a3ecc)',sh:'rgba(55,115,255,.7)',rc:'rgba(175,215,255,.9)',w:.58},
+    {id:'s',sz:55,pt:2,bg:'radial-gradient(circle at 35% 30%,#ffb488,#cc3311)',sh:'rgba(215,75,30,.65)',rc:'rgba(255,175,110,.9)',w:.28},
+    {id:'b',sz:68,pt:5,bg:'radial-gradient(circle at 35% 30%,#fff066,#cc8800)',sh:'rgba(235,180,0,.8)',rc:'rgba(255,215,100,.95)',w:.09},
+    {id:'h',sz:60,pt:3,bg:'radial-gradient(circle at 35% 30%,#ff8fa8,#d6004f)',sh:'rgba(255,60,110,.75)',rc:'rgba(255,160,190,.95)',w:.14,heart:true},
+    {id:'x',sz:74,pt:15,bg:'radial-gradient(circle at 35% 30%,#ff6ec7,#8b00ff)',sh:'rgba(200,50,255,.85)',rc:'rgba(255,150,255,.95)',w:.028,boss:true},
+  ],
+
+  /* ─────────────────────────────────────────
+     go(mode) — start / restart game in a mode
+  ───────────────────────────────────────── */
+  go(mode){
+    this.mode=mode||'classic';
+    this.score=0; this.time=0; this.level=1; this.combo=1; this.lct=0; this.cpa=0;
+    this.bestCombo=0; this.hearts=3; this.shielded=false; this.scoreSaved=false;
+    this.cActive=false; this.cClickable=false;
+    this._isWorldRecordRun=false;
+    this.goldenActive=false; clearInterval(this._goldenTick);
+    _('goldenBanner').classList.remove('show');
+    _('goldenOverlay').classList.remove('show');
+    clearTimeout(this.cTO); clearInterval(this.gTO); cancelAnimationFrame(this.cRAF);
+    this.stopHeartbeat();
+    _('dangerOverlay').classList.remove('show');
+    _('tmLabel').textContent='TIME';
+    _('tm').style.color='';
+    bumpGlobalPlays();
+
+    const isS=this.mode==='survival';
+    _('stLevel').style.display = isS?'none':'';
+    _('stSpeed').style.display = isS?'':'none';
+    _('stHearts').style.display = isS?'':'none';
+    this.renderShieldIcon(false);
+    this.renderHearts();
+
+    this.view('play');
+    this.startClock();
+
+    this.hud();
+    setTimeout(()=>this.spawn(),140);
+  },
+
+  /* ─────────────────────────────────────────
+     startClock() — shared count-up timer used
+     by Classic/Survival (go() and resume()).
+     Also rolls the per-second chance for a
+     Golden Rush event. Arena uses its own
+     countdown timer instead (see startArenaRun).
+  ───────────────────────────────────────── */
+  startClock(){
+    this.gTO=setInterval(()=>{
+      this.time++;
+      _('tm').textContent=
+        `${String(Math.floor(this.time/60)).padStart(2,'0')}:`+
+        `${String(this.time%60).padStart(2,'0')}`;
+      this.checkGoldenTrigger();
+    },1000);
+  },
+
+  /* Golden Rush is excluded from Arena on purpose: a random
+     luck-based x2 window would make PvP results depend on who
+     happened to be playing when it fired, breaking fairness. */
+  checkGoldenTrigger(){
+    if(this.mode==='arena' || this.goldenActive) return;
+    if(this.time>=8 && Math.random()<0.02) this.triggerGoldenRush();
+  },
+
+  triggerGoldenRush(){
+    this.goldenActive=true;
+    _('goldenBanner').classList.add('show');
+    _('goldenOverlay').classList.add('show');
+    this.sfx('golden');
+    this.toast('⚡ GOLDEN RUSH!','#ffd700');
+    if(navigator.vibrate) navigator.vibrate([15,20,15,20,15,20,60]);
+    let left=6;
+    _('goldenTimer').textContent=left;
+    clearInterval(this._goldenTick);
+    this._goldenTick=setInterval(()=>{
+      left--;
+      if(left<=0){
+        clearInterval(this._goldenTick);
+        this.goldenActive=false;
+        _('goldenBanner').classList.remove('show');
+        _('goldenOverlay').classList.remove('show');
+        return;
+      }
+      _('goldenTimer').textContent=left;
+    },1000);
+  },
+
+  /* ─────────────────────────────────────────
+     checkScoreMilestone() — celebratory pop when
+     crossing a round-number score threshold.
+     Picks the HIGHEST mark crossed in one jump
+     (relevant when a Boss circle + combo + Golden
+     Rush stack into one huge point gain).
+  ───────────────────────────────────────── */
+  checkScoreMilestone(prev, cur){
+    const marks=[50,100,200,300,500,750,1000,1500,2000,3000,5000,7500,10000];
+    let hit=null;
+    for(const m of marks){ if(prev<m && cur>=m) hit=m; }
+    if(hit!=null){
+      this.toast(`🎉 ${hit} ĐIỂM!`,'#8ab4ff');
+      this.confetti(24);
+      this.sfx('milestone');
+    }
+  },
+
+  /* ─────────────────────────────────────────
+     Survival difficulty curve — driven by the
+     same pause-safe `this.time` clock already
+     on screen. Accelerates, then floors out so
+     it stays brutal but never literally impossible.
+  ───────────────────────────────────────── */
+  survivalSpeedFactor(){
+    const el=this.time;
+    return 1 + el*0.045 + el*el*0.0009;
+  },
+  getCircleDuration(){
+    if(this.mode==='survival'){
+      return Math.max(420, 2600/this.survivalSpeedFactor());
+    }
+    if(this.mode==='arena'){
+      /* Fixed curve, identical for every player — decoupled from
+         personal Easy/Med/Hard Settings so nobody can game the
+         PvP ranking by lowering their own difficulty. Ramps up
+         over the 45s window to keep tension rising to the wire. */
+      const elapsed = 45 - Math.max(0,this.arenaTimeLeft);
+      return Math.max(650, 2400 - elapsed*38);
+    }
+    const D=this.DIFS[this.dif];
+    return Math.max(D.m, D.b-(this.level-1)*D.d);
+  },
+
+  /* ─────────────────────────────────────────
+     spawnPickType() — weighted random, pool
+     adapts to mode/hearts (heal circle only
+     appears in Survival when hearts < 3)
+  ───────────────────────────────────────── */
+  spawnPickType(){
+    const pool=this.TYPES.filter(t=> !t.heart || (this.mode==='survival' && this.hearts<3));
+    const sum=pool.reduce((a,t)=>a+t.w,0);
+    let r=Math.random()*sum, cum=0;
+    for(const t of pool){ cum+=t.w; if(r<cum) return t; }
+    return pool[0];
+  },
+
+  /* ─────────────────────────────────────────
+     spawn() — place a new circle on screen.
+
+     ROOT-CAUSE FIX for invisible-circle bug:
+     fill:'forwards' WAAPI animations outrank
+     inline styles in the CSS cascade, so
+     element.style.opacity='1' had NO EFFECT
+     while a finished fill:forwards anim was
+     still "current".  Fix: store every anim
+     ref, cancel it first thing, force a layout
+     flush (getBoundingClientRect) to commit the
+     opacity:0 base state, then use pure WAAPI
+     for the appear — zero CSS transitions on #C.
+  ───────────────────────────────────────── */
+  spawn(){
+    if(this.s!=='play') return;
+    const C=_('C'), arena=_('arena');
+
+    /* ── Step 1: kill every existing animation on #C ─────
+       Belt-and-suspenders: explicit stored ref FIRST,
+       then sweep getAnimations() for anything we missed. */
+    if(this._circAnim){ try{this._circAnim.cancel();}catch(e){} this._circAnim=null; }
+    try{ C.getAnimations().forEach(a=>{try{a.cancel();}catch(e){}}); }catch(e){}
+
+    const t=this.spawnPickType();
+    this.ct=t;
+
+    const aw=arena.clientWidth, ah=arena.clientHeight;
+    const mg=t.sz/2+22;
+    const cx=mg+Math.random()*(aw-t.sz-mg*2);
+    const cy=mg+Math.random()*(ah-t.sz-mg*2);
+
+    this.curCX=cx; this.curCY=cy;
+    this.curCenterX=cx+t.sz/2; this.curCenterY=cy+t.sz/2;
+
+    /* ── Step 2: hard-reset ALL inline styles on #C ────── */
+    C.style.cssText=`
+      position:absolute;border-radius:50%;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;color:#fff;z-index:3;overflow:visible;
+      will-change:transform,opacity;
+      width:${t.sz}px;height:${t.sz}px;left:${cx}px;top:${cy}px;
+      background:${t.bg};
+      box-shadow:${t.id==='b'
+        ?'0 0 35px rgba(235,180,0,.85),0 0 65px rgba(255,180,0,.35)'
+        : t.id==='x'
+        ?'0 0 45px rgba(255,80,220,.9),0 0 85px rgba(180,50,255,.5)'
+        :`0 0 28px ${t.sh}`};
+      font-size:${(t.id==='b'||t.id==='h'||t.id==='x')?'1.7rem':'0'};
+      opacity:0;transform:scale(0) rotate(-22deg);
+      transition:none;animation:none;pointer-events:none;
+      filter:none;
+    `;
+    _('Ctxt').textContent = t.id==='b' ? '★' : (t.id==='h' ? '♥' : (t.id==='x' ? '👑' : ''));
+
+    const ex=11, rr=t.sz/2+ex, svgSz=(rr+4)*2, cc=rr+4;
+    this.cCirc = 2*Math.PI*rr;
+    const ring=_('ring');
+    ring.setAttribute('width',svgSz);
+    ring.setAttribute('height',svgSz);
+    ring.setAttribute('viewBox',`0 0 ${svgSz} ${svgSz}`);
+    ring.style.cssText=`overflow:visible;position:absolute;top:${-ex-4}px;left:${-ex-4}px;pointer-events:none;transform:rotate(-90deg)`;
+    ring.innerHTML=`
+      <circle cx="${cc}" cy="${cc}" r="${rr}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="3"/>
+      <circle id="rp" cx="${cc}" cy="${cc}" r="${rr}" fill="none" stroke="${t.rc}"
+        stroke-width="3.5" stroke-linecap="round"
+        stroke-dasharray="${this.cCirc}" stroke-dashoffset="0"/>`;
+
+    this.cActive=true;
+    this.cClickable=false;
+
+    /* ── Step 3: force layout flush ─────────────────────
+       Reads a layout property, flushing any pending style
+       recalcs. After this the browser has COMMITTED opacity:0
+       as the live computed value — safe to animate FROM it. */
+    void C.getBoundingClientRect();
+
+    /* ── Step 4: WAAPI appear animation — no CSS transition.
+       fill:'none' → when animation ends, element reverts to
+       its inline style (opacity:1 we set in onfinish).
+       This is immune to the fill:forwards cascade bug.     */
+    this._circAnim = C.animate(
+      [
+        {transform:'scale(0) rotate(-22deg)', opacity:0},
+        {transform:'scale(1.08) rotate(2deg)',  opacity:1, offset:.72},
+        {transform:'scale(1) rotate(0deg)',      opacity:1}
+      ],
+      {duration:320, easing:'ease-out', fill:'none'}
+    );
+    this._circAnim.onfinish = ()=>{
+      /* Bake final state into inline style so the element
+         stays visible after the animation releases it. */
+      C.style.opacity='1';
+      C.style.transform='scale(1) rotate(0deg)';
+      if(this._circAnim){ try{this._circAnim.cancel();}catch(e){} this._circAnim=null; }
+    };
+
+    setTimeout(()=>{
+      if(!this.cActive) return;
+
+      /* Cancel appear anim if still running (early enablement) */
+      if(this._circAnim){ try{this._circAnim.cancel();}catch(e){} this._circAnim=null; }
+      C.style.opacity='1';
+      C.style.transform='scale(1) rotate(0deg)';
+
+      this.cClickable=true;
+      C.style.pointerEvents='auto';
+      C.style.animation = t.id==='b'
+        ? 'bPulse .75s ease-in-out infinite'
+        : t.id==='x'
+        ? 'xPulse .5s ease-in-out infinite'
+        : 'cPulse 1.6s ease-in-out infinite';
+
+      let dur=this.getCircleDuration();
+      if(t.id==='x') dur=Math.max(500, dur*0.75);
+      if(this.mode==='survival') _('spd').textContent=`×${this.survivalSpeedFactor().toFixed(1)}`;
+
+      const t0=performance.now(), circ=this.cCirc;
+      const tick=now=>{
+        if(!this.cClickable || !this.cActive) return;
+        const ratio=Math.min((now-t0)/dur, 1);
+        const rp=_('rp');
+        if(rp){
+          rp.style.strokeDashoffset=circ*ratio;
+          if(ratio>0.7) rp.setAttribute('stroke','#ff4444');
+        }
+        if(ratio<1) this.cRAF=requestAnimationFrame(tick);
+      };
+      this.cRAF=requestAnimationFrame(tick);
+
+      this.cTO=setTimeout(()=>{ if(this.cClickable) this.miss(); }, dur);
+
+    }, 300);
+  },
+
+  /* ─────────────────────────────────────────
+     click() — THE CRITICAL ANTI-EXPLOIT HANDLER
+     cClickable checked + disabled SYNCHRONOUSLY
+     first, before anything else runs.
+  ───────────────────────────────────────── */
+  click(e){
+    if(!this.cClickable) return;
+    this.cClickable=false;
+    if(e) e.stopPropagation();
+    const C=_('C');
+    C.style.pointerEvents='none';
+
+    cancelAnimationFrame(this.cRAF);
+    clearTimeout(this.cTO);
+    this.cActive=false;
+
+    const now=performance.now();
+    this.combo=(this.lct>0 && now-this.lct<2200) ? Math.min(this.combo+1,8) : 1;
+    this.lct=now;
+    if(this.combo>this.bestCombo) this.bestCombo=this.combo;
+
+    const base=this.ct.pt;
+    const comboMult=this.combo>=6?3 : this.combo>=4?2 : 1;
+    const goldenMult=this.goldenActive?2:1;
+    const pts=base*comboMult*goldenMult;
+    const prevScore=this.score;
+    this.score+=pts;
+    this.checkScoreMilestone(prevScore, this.score);
+
+    /* Heal circle: restore a heart, or bonus points if already full */
+    if(this.ct.heart){
+      if(this.hearts<3){ this.gainHeart(); this.toast('+1 ❤️','#ff6688'); }
+      else { this.score+=8; this.toast('+8 BONUS','#ffd700'); }
+    }
+
+    /* Boss circle: rare, huge reward, big spectacle for viewers */
+    if(this.ct.boss){
+      this.toast(`👑 BOSS! +${pts}`,'#ff6ec7');
+      this.shakeScreen(.8);
+      this.particles();
+      if(navigator.vibrate) navigator.vibrate([20,30,20,30,50]);
+    }
+
+    /* Combo Shield: reaching ×6 in Survival grants a 1-time life-save */
+    if(this.combo===6 && this.mode==='survival' && !this.shielded){
+      this.shielded=true;
+      this.renderShieldIcon(true);
+      this.toast('🛡️ SHIELD UP!','#66ddff');
+      this.sfx('shield');
+    }
+    if(this.combo===5) this.toast('🔥 ON FIRE!','#ff8844');
+    if(this.combo===8) this.toast('⚡ UNSTOPPABLE!','#ffd700');
+
+    this.cpa++;
+    if(this.cpa>=15){ this.level++; this.cpa=0; this.showLvl(); }
+
+    this.hud();
+    this.particles();
+    this.popup(pts, comboMult>1, goldenMult>1);
+    this.sfx('click');
+    if(navigator.vibrate) navigator.vibrate(this.ct.id==='b'?[14,20,14]:8);
+
+    C.style.animation='none';
+    /* fill:'none' — never override inline styles via cascade.
+       onfinish bakes the end-state into inline style so the
+       element stays invisible when the animation releases it. */
+    this._circAnim = C.animate(
+      [{transform:'scale(1)',opacity:1},{transform:'scale(1.62)',opacity:0}],
+      {duration:300, easing:'cubic-bezier(.6,0,1,1)', fill:'none'}
+    );
+    this._circAnim.onfinish = ()=>{ C.style.opacity='0'; C.style.transform='scale(1.62)'; };
+
+    setTimeout(()=>this.spawn(), 300+this.nd);
+  },
+
+  /* ─────────────────────────────────────────
+     handleEmptyClick() — clicked arena but
+     MISSED the circle ("bấm hụt"). Resets combo
+     always; costs a heart in Survival mode.
+  ───────────────────────────────────────── */
+  handleEmptyClick(){
+    if(this.s!=='play' || !this.cClickable) return;
+    this.combo=1; this.lct=0; this.hud();
+    this.sfx('whiff');
+    if(this.mode==='survival') this.loseHeart();
+  },
+
+  /* ─────────────────────────────────────────
+     miss() — circle timed out without click
+  ───────────────────────────────────────── */
+  miss(){
+    if(!this.cActive) return;
+    this.cClickable=false;
+    const C=_('C');
+    C.style.pointerEvents='none';
+    cancelAnimationFrame(this.cRAF);
+    this.cActive=false;
+
+    this.combo=1; this.lct=0; this.hud();
+
+    C.style.animation='none';
+    this._circAnim = C.animate(
+      [
+        {transform:'scale(1)',  opacity:1, filter:'brightness(1) saturate(1)'},
+        {transform:'scale(.28)',opacity:0, filter:'brightness(4) saturate(0)'}
+      ],
+      {duration:240, easing:'ease', fill:'none'}
+    );
+    this._circAnim.onfinish = ()=>{
+      C.style.opacity='0';
+      C.style.transform='scale(.28)';
+      C.style.filter='brightness(4) saturate(0)';
+    };
+
+    const flash=_('missFlash');
+    flash.getAnimations().forEach(a=>a.cancel());
+    flash.animate([{opacity:1},{opacity:0}], {duration:320,easing:'ease-out'});
+
+    this.sfx('miss');
+
+    if(this.mode==='survival'){
+      this.loseHeart();
+      if(this.hearts<=0) return; // game over takes over — no next spawn
+    }
+
+    setTimeout(()=>this.spawn(), 420);
+  },
+
+  /* ─────────────────────────────────────────
+     loseHeart() / gainHeart() — Survival lives
+  ───────────────────────────────────────── */
+  loseHeart(){
+    if(this.hearts<=0) return;
+
+    if(this.shielded){
+      this.shielded=false;
+      this.renderShieldIcon(false);
+      this.toast('🛡️ BLOCKED!','#66ddff');
+      this.sfx('shield');
+      this.shakeScreen(.5);
+      return;
+    }
+
+    const idx=this.hearts-1;
+    this.hearts--;
+    const heartEls=document.querySelectorAll('#hearts .heart');
+    const el=heartEls[idx];
+    if(el){
+      el.animate(
+        [
+          {transform:'scale(1) rotate(0)'},
+          {transform:'scale(1.5) rotate(-18deg)',offset:.3},
+          {transform:'scale(.55) rotate(14deg)',offset:.62},
+          {transform:'scale(1) rotate(0)'}
+        ],
+        {duration:420,easing:'ease'}
+      );
+      setTimeout(()=>el.classList.add('lost'),230);
+    }
+
+    this.shakeScreen(1);
+    this.sfx('hurt');
+    if(navigator.vibrate) navigator.vibrate([40,30,40]);
+
+    if(this.hearts<=0){
+      this.stopHeartbeat();
+      setTimeout(()=>this.gameOver(), 400);
+    }else if(this.hearts===1){
+      this.startHeartbeat();
+    }
+  },
+
+  gainHeart(){
+    if(this.hearts>=3) return;
+    this.hearts++;
+    const heartEls=document.querySelectorAll('#hearts .heart');
+    const el=heartEls[this.hearts-1];
+    if(el){
+      el.classList.remove('lost');
+      el.animate(
+        [{transform:'scale(.3)',opacity:.4},{transform:'scale(1.4)',opacity:1,offset:.5},{transform:'scale(1)',opacity:1}],
+        {duration:420,easing:'ease'}
+      );
+    }
+    this.sfx('heal');
+    if(this.hearts>1) this.stopHeartbeat();
+  },
+
+  renderHearts(){
+    document.querySelectorAll('#hearts .heart').forEach((el,i)=>{
+      el.classList.toggle('lost', i>=this.hearts);
+    });
+  },
+
+  renderShieldIcon(on){
+    const el=_('shieldIcon');
+    if(el) el.style.display = on ? 'inline-block' : 'none';
+  },
+
+  startHeartbeat(){
+    this.stopHeartbeat();
+    _('dangerOverlay').classList.add('show');
+    this.hbInterval=setInterval(()=>this.sfx('heartbeat'), 950);
+  },
+  stopHeartbeat(){
+    clearInterval(this.hbInterval);
+    _('dangerOverlay').classList.remove('show');
+  },
+
+  /* ─────────────────────────────────────────
+     shakeScreen() — juicy camera shake (WAAPI)
+  ───────────────────────────────────────── */
+  shakeScreen(power=1){
+    const W=_('W');
+    const m=power;
+    W.animate(
+      [
+        {transform:'translate(0,0)'},
+        {transform:`translate(${-8*m}px,${4*m}px)`},
+        {transform:`translate(${7*m}px,${-5*m}px)`},
+        {transform:`translate(${-6*m}px,${-3*m}px)`},
+        {transform:`translate(${5*m}px,${4*m}px)`},
+        {transform:'translate(0,0)'}
+      ],
+      {duration:340,easing:'ease-out'}
+    );
+  },
+
+  /* ─────────────────────────────────────────
+     toast() — pooled-free small achievement popup
+  ───────────────────────────────────────── */
+  toast(text,color){
+    const arena=_('arena');
+    const n=document.createElement('div');
+    n.textContent=text;
+    const fsize = this.streamerMode ? '1.6rem' : '1.25rem';
+    const dur = this.streamerMode ? 1500 : 1100;
+    n.style.cssText=`position:absolute;top:18%;left:50%;transform:translate(-50%,-50%);font-size:${fsize};font-weight:900;color:${color};text-shadow:0 0 16px ${color}aa,0 2px 6px rgba(0,0,0,.8);pointer-events:none;z-index:22;white-space:nowrap`;
+    arena.appendChild(n);
+    n.animate(
+      [
+        {opacity:0,transform:'translate(-50%,-50%) scale(.5) translateY(10px)'},
+        {opacity:1,transform:'translate(-50%,-50%) scale(1.15) translateY(0)',offset:.25},
+        {opacity:1,transform:'translate(-50%,-50%) scale(1) translateY(0)',offset:.7},
+        {opacity:0,transform:'translate(-50%,-50%) scale(1) translateY(-14px)'}
+      ],
+      {duration:dur,easing:'ease'}
+    );
+    setTimeout(()=>n.remove(),dur+50);
+  },
+
+  /* ─────────────────────────────────────────
+     hud() — update header display
+  ───────────────────────────────────────── */
+  hud(){
+    _('sc').textContent=this.score;
+    _('lv').textContent=this.level;
+    const cb=_('cb');
+    cb.textContent=`×${this.combo}`;
+    cb.style.color=this.combo>=6?'#ff6'
+                  :this.combo>=4?'#fa8'
+                  :this.combo>=2?'#af6'
+                  :'rgba(255,255,255,.58)';
+    if(this.combo>1){
+      cb.getAnimations().forEach(a=>a.cancel());
+      cb.animate([{transform:'scale(1)'},{transform:'scale(1.48)'},{transform:'scale(1)'}],
+        {duration:260,easing:'ease'});
+    }
+  },
+
+  /* ─────────────────────────────────────────
+     particles() — pooled burst, zero layout reads
+  ───────────────────────────────────────── */
+  particles(){
+    if(!this.partPool.length) this.initPartPool();
+    const cx=this.curCenterX, cy=this.curCenterY;
+    const cols=this.ct.id==='b'?['#ffd700','#ffaa00','#fff700','#ffe','#fff']:
+               this.ct.id==='s'?['#ff8844','#ff5522','#ffaa66','#fff8','#fff']:
+               this.ct.id==='h'?['#ff6688','#ff3366','#ffaac4','#fff8','#fff']:
+               this.ct.id==='x'?['#ff6ec7','#c060ff','#ff9ee8','#fff8','#fff']:
+                                 ['#6699ff','#4477ff','#aaddff','#ccf','#fff'];
+    for(let i=0;i<13;i++){
+      const p=this.partPool[this.partIdx];
+      this.partIdx=(this.partIdx+1)%this.PART_N;
+      const ang=Math.random()*Math.PI*2, dist=48+Math.random()*68;
+      const sz=3.5+Math.random()*5;
+      p.style.width=sz+'px'; p.style.height=sz+'px';
+      p.style.background=cols[i%cols.length];
+      p.style.left=cx+'px'; p.style.top=cy+'px';
+      p.getAnimations().forEach(a=>a.cancel());
+      p.animate(
+        [
+          {transform:'translate(0,0) scale(1)',opacity:1},
+          {transform:`translate(${Math.cos(ang)*dist}px,${Math.sin(ang)*dist}px) scale(0)`,opacity:0}
+        ],
+        {duration:420+Math.random()*300,easing:'cubic-bezier(.2,.8,.3,1)',fill:'forwards'}
+      );
+    }
+  },
+
+  initPartPool(){
+    const arena=_('arena');
+    const frag=document.createDocumentFragment();
+    for(let i=0;i<this.PART_N;i++){
+      const p=document.createElement('div');
+      p.style.cssText='position:absolute;border-radius:50%;pointer-events:none;z-index:10;will-change:transform,opacity;opacity:0';
+      frag.appendChild(p);
+      this.partPool.push(p);
+    }
+    arena.appendChild(frag);
+  },
+
+  /* ─────────────────────────────────────────
+     popup() — pooled floating score text
+  ───────────────────────────────────────── */
+  popup(pts,comboBoost,goldenBoost){
+    if(!this.popPool.length) this.initPopPool();
+    const cx=this.curCenterX, cy=this.curCenterY-14;
+    const col=pts>=5?'#ffd700':pts>=2?'#ff8844':'#88ccff';
+    const p=this.popPool[this.popIdx];
+    this.popIdx=(this.popIdx+1)%this.POP_N;
+    p.style.left=cx+'px'; p.style.top=cy+'px';
+    p.style.fontSize=((.82+pts*.33)*(this.streamerMode?1.3:1))+'rem';
+    p.style.color=col;
+    let suffix='';
+    if(comboBoost) suffix+=` ×${this.combo}`;
+    if(goldenBoost) suffix+=` ⚡2x`;
+    p.textContent = suffix ? `+${pts}${suffix}` : `+${pts}`;
+    p.getAnimations().forEach(a=>a.cancel());
+    p.animate(
+      [
+        {transform:'translateX(-50%) translateY(0) scale(1)',opacity:1},
+        {transform:'translateX(-50%) translateY(-7px) scale(1.3)',opacity:1,offset:.2},
+        {transform:'translateX(-50%) translateY(-58px) scale(.75)',opacity:0}
+      ],
+      {duration:920,easing:'ease-out',fill:'forwards'}
+    );
+  },
+
+  initPopPool(){
+    const arena=_('arena');
+    const frag=document.createDocumentFragment();
+    for(let i=0;i<this.POP_N;i++){
+      const p=document.createElement('div');
+      p.style.cssText='position:absolute;pointer-events:none;z-index:15;font-weight:900;text-shadow:0 2px 6px rgba(0,0,0,.88);white-space:nowrap;will-change:transform,opacity;opacity:0';
+      frag.appendChild(p);
+      this.popPool.push(p);
+    }
+    arena.appendChild(frag);
+  },
+
+  /* ─────────────────────────────────────────
+     confetti() — canvas celebration burst for
+     personal bests, world records, and big
+     milestones. Particle count is halved in
+     Performance Mode to protect weak devices.
+  ───────────────────────────────────────── */
+  confetti(count=60){
+    if(this.perf) count=Math.floor(count*0.4);
+    const W=_('W'), cv=_('confettiCanvas');
+    const ctx=cv.getContext('2d');
+    cv.width=W.clientWidth; cv.height=W.clientHeight;
+    const colors=['#ffd700','#ff6ec7','#66aaff','#8b5cf6','#4ade80','#fb923c'];
+    const parts=Array.from({length:count},()=>({
+      x:cv.width/2+(Math.random()-.5)*cv.width*0.6,
+      y:-10-Math.random()*40,
+      vx:(Math.random()-.5)*6,
+      vy:2+Math.random()*3,
+      rot:Math.random()*360,
+      vr:(Math.random()-.5)*14,
+      sz:5+Math.random()*6,
+      col:colors[Math.floor(Math.random()*colors.length)]
+    }));
+    const start=performance.now();
+    const DUR=2600;
+    const tick=(now)=>{
+      const t=now-start;
+      ctx.clearRect(0,0,cv.width,cv.height);
+      if(t>DUR){ return; }
+      parts.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy; p.vy+=0.06; p.rot+=p.vr;
+        const fade = t>DUR*0.7 ? Math.max(0,1-(t-DUR*0.7)/(DUR*0.3)) : 1;
+        ctx.save();
+        ctx.translate(p.x,p.y);
+        ctx.rotate(p.rot*Math.PI/180);
+        ctx.globalAlpha=fade;
+        ctx.fillStyle=p.col;
+        ctx.fillRect(-p.sz/2,-p.sz/3,p.sz,p.sz*0.66);
+        ctx.restore();
+      });
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  },
+
+  /* ─────────────────────────────────────────
+     showLvl() — level up notification
+  ───────────────────────────────────────── */
+  showLvl(){
+    const arena=_('arena');
+    const n=document.createElement('div');
+    n.style.cssText=`
+      position:absolute;top:44%;left:50%;
+      transform:translate(-50%,-50%);
+      font-size:2.2rem;font-weight:900;color:#ffd700;
+      pointer-events:none;z-index:20;white-space:nowrap;
+      text-shadow:0 0 24px rgba(255,215,0,.85);`;
+    n.textContent=`LEVEL ${this.level}!`;
+    arena.appendChild(n);
+    n.animate(
+      [
+        {opacity:0,transform:'translate(-50%,-50%) scale(.3)'},
+        {opacity:1,transform:'translate(-50%,-50%) scale(1.25)',offset:.28},
+        {opacity:1,transform:'translate(-50%,-50%) scale(1)',offset:.65},
+        {opacity:0,transform:'translate(-50%,-50%) scale(1.08)'}
+      ],
+      {duration:1650,easing:'ease'}
+    );
+    setTimeout(()=>n.remove(), 1700);
+    this.sfx('level');
+  },
+
+  /* ─────────────────────────────────────────
+     gameOver() — Survival death screen
+  ───────────────────────────────────────── */
+  gameOver(){
+    clearTimeout(this.cTO); cancelAnimationFrame(this.cRAF); clearInterval(this.gTO);
+    this.stopHeartbeat();
+    this.cActive=false; this.cClickable=false;
+    _('C').style.pointerEvents='none';
+    this.sfx('gameover');
+
+    const isNewBest = this.score>this.survBest;
+    if(isNewBest) this.survBest=this.score;
+
+    const m=String(Math.floor(this.time/60)).padStart(2,'0');
+    const s=String(this.time%60).padStart(2,'0');
+    _('goEmoji').textContent = isNewBest ? '🏆' : '💔';
+    _('goScore').textContent=this.score;
+    _('goTime').textContent=`${m}:${s}`;
+    _('goCombo').textContent=`×${this.bestCombo||1}`;
+    _('goBadge').style.display = isNewBest ? 'block' : 'none';
+
+    /* Switch screens immediately — no waiting on network/storage —
+       then layer the celebration on top a beat later if it applies. */
+    this.view('gameover');
+
+    const panel=document.querySelector('#s7 .pnl');
+    panel.animate(
+      [
+        {transform:'scale(.7) translateY(20px)',opacity:0},
+        {transform:'scale(1.05) translateY(0)',opacity:1,offset:.7},
+        {transform:'scale(1) translateY(0)',opacity:1}
+      ],
+      {duration:480,easing:'cubic-bezier(.34,1.56,.64,1)'}
+    );
+
+    if(!this.scoreSaved){
+      this.scoreSaved=true;
+      PLAYER.submit('survival', this.score, this.time).then(({isPersonalBest, isWorldRecord})=>{
+        if(isWorldRecord){ this._isWorldRecordRun=true; this.celebrateWorldRecord(); }
+        else if(isPersonalBest && this.score>0){ this.confetti(45); }
+      });
+    }
+  },
+
+  /* World-record celebration — the biggest spectacle moment in the
+     game, reserved for beating every other player's best in a mode. */
+  celebrateWorldRecord(){
+    this.confetti(90);
+    this.toast('🌍 KỶ LỤC THẾ GIỚI MỚI!','#ffd700');
+    this.sfx('worldrecord');
+    if(navigator.vibrate) navigator.vibrate([40,60,40,60,40,100]);
+  },
+
+  /* ─────────────────────────────────────────
+     buildShareCard() — draws a polished, on-brand
+     score card to an offscreen canvas (rendered at
+     up to 2.5x pixel density for crisp downloads).
+  ───────────────────────────────────────── */
+  buildShareCard(){
+    const dpr=Math.min(window.devicePixelRatio||1, 2.5);
+    const W=720, H=900;
+    const cv=document.createElement('canvas');
+    cv.width=W*dpr; cv.height=H*dpr;
+    const ctx=cv.getContext('2d');
+    ctx.scale(dpr,dpr);
+
+    const rr=(x,y,w,h,r)=>{
+      ctx.beginPath();
+      ctx.moveTo(x+r,y);
+      ctx.arcTo(x+w,y,x+w,y+h,r);
+      ctx.arcTo(x+w,y+h,x,y+h,r);
+      ctx.arcTo(x,y+h,x,y,r);
+      ctx.arcTo(x,y,x+w,y,r);
+      ctx.closePath();
+    };
+
+    ctx.fillStyle='#07071a';
+    rr(0,0,W,H,30); ctx.fill();
+    ctx.save();
+    rr(0,0,W,H,30); ctx.clip();
+
+    const glow=(x,y,r,hue,a)=>{
+      const g=ctx.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,`hsla(${hue},85%,65%,${a})`);
+      g.addColorStop(1,`hsla(${hue},85%,55%,0)`);
+      ctx.fillStyle=g;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    };
+    glow(580,150,230,255,.32); glow(120,700,210,200,.26);
+    glow(610,820,190,290,.22); glow(110,110,160,210,.20);
+
+    ctx.restore();
+
+    const border=ctx.createLinearGradient(0,0,W,H);
+    border.addColorStop(0,'#6af'); border.addColorStop(.5,'#b6f'); border.addColorStop(1,'#ffd700');
+    ctx.lineWidth=9; ctx.strokeStyle=border;
+    rr(6,6,W-12,H-12,26); ctx.stroke();
+
+    ctx.textAlign='center';
+    const logoG=ctx.createLinearGradient(W/2-160,0,W/2+160,0);
+    logoG.addColorStop(0,'#6af'); logoG.addColorStop(.5,'#b6f'); logoG.addColorStop(1,'#6df');
+    ctx.fillStyle=logoG;
+    ctx.font='900 42px "Segoe UI",system-ui,sans-serif';
+    ctx.fillText('⊙ CIRCLE RUSH', W/2, 100);
+
+    const modeTxt=this.mode==='survival'?'❤️  SINH TỒN':this.mode==='arena'?'⚔️  PVP ĐẤU TRƯỜNG':'♾️  VÔ TẬN';
+    ctx.font='700 21px "Segoe UI",system-ui,sans-serif';
+    const bw=ctx.measureText(modeTxt).width+50;
+    ctx.fillStyle='rgba(120,160,255,.16)';
+    rr(W/2-bw/2,128,bw,42,21); ctx.fill();
+    ctx.strokeStyle='rgba(140,180,255,.4)'; ctx.lineWidth=1.5;
+    rr(W/2-bw/2,128,bw,42,21); ctx.stroke();
+    ctx.fillStyle='#cdeaff';
+    ctx.fillText(modeTxt, W/2, 156);
+
+    ctx.save();
+    ctx.translate(W/2,345);
+    ctx.lineWidth=14; ctx.strokeStyle='rgba(120,170,255,.16)';
+    ctx.beginPath(); ctx.arc(0,0,152,0,Math.PI*2); ctx.stroke();
+    ctx.lineWidth=14; ctx.lineCap='round'; ctx.strokeStyle='rgba(180,140,255,.55)';
+    ctx.beginPath(); ctx.arc(0,0,152,-Math.PI/2,-Math.PI/2+Math.PI*1.4); ctx.stroke();
+    ctx.restore();
+
+    ctx.shadowColor='rgba(120,170,255,.7)'; ctx.shadowBlur=28;
+    ctx.fillStyle='#8ab4ff';
+    ctx.font='900 112px "Segoe UI",system-ui,sans-serif';
+    ctx.fillText(String(this.score), W/2, 372);
+    ctx.shadowBlur=0;
+
+    ctx.font='700 18px "Segoe UI",system-ui,sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.45)';
+    ctx.fillText('ĐIỂM SỐ', W/2, 408);
+
+    const isBest=this.mode==='survival' && this.score>0 && this.score>=this.survBest;
+    if(this._isWorldRecordRun){
+      ctx.fillStyle='#ffd700';
+      ctx.font='800 23px "Segoe UI",system-ui,sans-serif';
+      ctx.fillText('🌍 KỶ LỤC THẾ GIỚI!', W/2, 488);
+    }else if(isBest){
+      ctx.fillStyle='#ffd700';
+      ctx.font='800 23px "Segoe UI",system-ui,sans-serif';
+      ctx.fillText('🏆 KỶ LỤC MỚI!', W/2, 488);
+    }
+
+    const m=String(Math.floor(this.time/60)).padStart(2,'0');
+    const s=String(this.time%60).padStart(2,'0');
+    const stats=[{label:'THỜI GIAN',val:`${m}:${s}`},{label:'COMBO CAO NHẤT',val:`×${this.bestCombo||1}`}];
+    stats.forEach((st,i)=>{
+      const x=W/2+(i===0?-150:150);
+      ctx.font='800 32px monospace';
+      ctx.fillStyle='#9fd6ff';
+      ctx.fillText(st.val, x, 565);
+      ctx.font='600 14px "Segoe UI",system-ui,sans-serif';
+      ctx.fillStyle='rgba(255,255,255,.4)';
+      ctx.fillText(st.label, x, 592);
+    });
+
+    ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(80,635); ctx.lineTo(W-80,635); ctx.stroke();
+
+    ctx.font='700 21px "Segoe UI",system-ui,sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.58)';
+    ctx.fillText('🎮 Bạn chơi được bao nhiêu điểm?', W/2, 705);
+    ctx.font='600 15px "Segoe UI",system-ui,sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.32)';
+    ctx.fillText('Circle Rush — tap · click · score', W/2, 734);
+
+    const dotColors=['#3e7dff','#ff5b22','#ffcf2e','#ff3a6e'];
+    const sx=W/2-(dotColors.length-1)*23;
+    dotColors.forEach((c,i)=>{
+      ctx.fillStyle=c; ctx.shadowColor=c; ctx.shadowBlur=14;
+      ctx.beginPath(); ctx.arc(sx+i*46,805,12,0,Math.PI*2); ctx.fill();
+    });
+    ctx.shadowBlur=0;
+
+    return cv;
+  },
+
+  /* ─────────────────────────────────────────
+     openShareCard() / shareCardNative() /
+     downloadCard() / closeShare()
+  ───────────────────────────────────────── */
+  openShareCard(){
+    this._shareReturnTo = this.s;
+    _('shareCardImg').style.display='none';
+    _('shareSpin').style.display='block';
+    this.view('share');
+    requestAnimationFrame(()=>{
+      const cv=this.buildShareCard();
+      cv.toBlob(blob=>{
+        if(!blob) return;
+        this._shareBlob=blob;
+        if(this._shareUrl) URL.revokeObjectURL(this._shareUrl);
+        this._shareUrl=URL.createObjectURL(blob);
+        const img=_('shareCardImg');
+        img.src=this._shareUrl;
+        img.onload=()=>{ _('shareSpin').style.display='none'; img.style.display='block'; };
+      }, 'image/png', 0.95);
+    });
+  },
+
+  shareCardNative(){
+    if(!this._shareBlob){ return; }
+    const modeTxt=this.mode==='survival'?'Sinh Tồn ❤️':this.mode==='arena'?'PVP Đấu Trường ⚔️':'Vô Tận ♾️';
+    const text=`🎯 Circle Rush — Tôi vừa đạt ${this.score} điểm ở chế độ ${modeTxt}! Thử xem bạn được bao nhiêu? ⚡`;
+    const btn=_('shareNativeBtn');
+    const orig=btn.textContent;
+    try{
+      const file=new File([this._shareBlob], 'circle-rush-score.png', {type:'image/png'});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({files:[file], title:'Circle Rush', text}).catch(()=>{});
+        return;
+      }
+      if(navigator.share){
+        navigator.share({title:'Circle Rush', text}).catch(()=>{});
+        return;
+      }
+    }catch(e){}
+    this.downloadCard();
+    btn.textContent='📥 Đã tải ảnh — đăng thủ công nhé!';
+    setTimeout(()=>btn.textContent=orig, 2200);
+  },
+
+  downloadCard(){
+    if(!this._shareUrl) return;
+    const a=document.createElement('a');
+    a.href=this._shareUrl;
+    a.download=`circle-rush-${this.score}-diem.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  },
+
+  closeShare(){
+    this.view(this._shareReturnTo || 'menu');
+  },
+
+  /* ─────────────────────────────────────────
+     sfx() — Web Audio synthesis (ONE shared
+     AudioContext for the entire session)
+  ───────────────────────────────────────── */
+  sfx(type){
+    if(!this.sound) return;
+    try{
+      if(!this.ac) this.ac=new (window.AudioContext||window.webkitAudioContext)();
+      if(this.ac.state==='suspended') this.ac.resume();
+      const ac=this.ac;
+      const tone=(f,d,shape='sine',vol=.2)=>{
+        const o=ac.createOscillator(), g=ac.createGain();
+        o.connect(g); g.connect(ac.destination);
+        o.type=shape; o.frequency.value=f;
+        g.gain.setValueAtTime(vol, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, ac.currentTime+d);
+        o.start(); o.stop(ac.currentTime+d);
+      };
+      if(type==='click'){
+        const f=this.ct?.id==='b'?900:this.ct?.id==='s'?660:this.ct?.id==='h'?740:this.ct?.id==='x'?520:510;
+        tone(f,.09,'sine',.22);
+        if(this.ct?.id==='b') setTimeout(()=>tone(1250,.12,'sine',.15),72);
+        if(this.ct?.id==='x'){ [660,880,1100].forEach((freq,i)=>setTimeout(()=>tone(freq,.13,'sine',.18),60+i*70)); }
+        if(this.combo>=4) setTimeout(()=>tone(f*1.5,.06,'sine',.1),35);
+      }else if(type==='miss'){
+        tone(185,.24,'triangle',.16);
+      }else if(type==='whiff'){
+        tone(160,.08,'square',.08);
+      }else if(type==='level'){
+        [380,500,650,820].forEach((f,i)=>setTimeout(()=>tone(f,.15,'sine',.18),i*80));
+      }else if(type==='heal'){
+        tone(700,.1,'sine',.18); setTimeout(()=>tone(950,.14,'sine',.16),60);
+      }else if(type==='hurt'){
+        tone(220,.16,'sawtooth',.22); setTimeout(()=>tone(140,.18,'sawtooth',.18),70);
+      }else if(type==='shield'){
+        tone(1100,.12,'sine',.2); setTimeout(()=>tone(1400,.1,'sine',.15),60);
+      }else if(type==='heartbeat'){
+        tone(90,.1,'sine',.18); setTimeout(()=>tone(70,.12,'sine',.15),130);
+      }else if(type==='gameover'){
+        [320,260,200,140].forEach((f,i)=>setTimeout(()=>tone(f,.3,'sine',.2),i*140));
+      }else if(type==='golden'){
+        [520,660,780,940].forEach((f,i)=>setTimeout(()=>tone(f,.13,'sine',.2),i*70));
+      }else if(type==='milestone'){
+        tone(700,.1,'sine',.16); setTimeout(()=>tone(980,.14,'sine',.14),70);
+      }else if(type==='worldrecord'){
+        [400,500,650,800,1000,1300].forEach((f,i)=>setTimeout(()=>tone(f,.18,'sine',.22),i*90));
+      }
+    }catch(e){}
+  },
+
+  /* ─────────────────────────────────────────
+     pause / resume / menu
+  ───────────────────────────────────────── */
+  pause(){
+    if(this.s!=='play') return;
+    clearTimeout(this.cTO); cancelAnimationFrame(this.cRAF); clearInterval(this.gTO);
+    this.stopHeartbeat();
+    this.cClickable=false;
+    _('C').style.pointerEvents='none';
+    const mb=_('pauseMenuBtn');
+    if(mb) mb.textContent = this.mode==='arena' ? '⌂  QUAY LẠI PHÒNG' : '⌂  MAIN MENU';
+    this.view('pause');
+  },
+
+  resume(){
+    this.view('play');
+    if(this.mode==='arena'){
+      this.gTO=setInterval(()=>{
+        this.arenaTimeLeft--;
+        this.updateArenaTimer();
+        if(this.arenaTimeLeft<=0){ clearInterval(this.gTO); this.endArenaRun(); }
+      },1000);
+    }else{
+      this.startClock();
+    }
+    this.cActive=false; this.cClickable=false;
+    setTimeout(()=>this.spawn(), 300);
+    if(this.mode==='survival' && this.hearts===1) this.startHeartbeat();
+  },
+
+  menu(){
+    clearTimeout(this.cTO); cancelAnimationFrame(this.cRAF); clearInterval(this.gTO);
+    this.stopHeartbeat();
+    this.cActive=false; this.cClickable=false;
+
+    if(this.score>0 && !this.scoreSaved){
+      this.scoreSaved=true;
+      if(this.mode==='arena'){
+        this.submitArenaScore();
+      }else{
+        const modeAtSubmit=this.mode, scoreAtSubmit=this.score, timeAtSubmit=this.time;
+        PLAYER.submit(modeAtSubmit, scoreAtSubmit, timeAtSubmit).then(({isPersonalBest, isWorldRecord})=>{
+          if(isWorldRecord){ this._isWorldRecordRun=true; this.celebrateWorldRecord(); }
+          else if(isPersonalBest && scoreAtSubmit>0){ this.confetti(40); }
+        });
+      }
+    }
+
+    if(this.mode==='arena' && this.roomCode){
+      this.view('room');
+      this.renderRoomLB();
+    }else{
+      this.view('menu');
+    }
+  },
+
+  /* ═════════════════════════════════════════════════════
+     PVP ARENA — room create/join/leave, live room
+     leaderboard polling, and the 45-second timed run.
+  ═════════════════════════════════════════════════════ */
+  async createRoom(){
+    const code = await ARENA.create();
+    this.roomCode = code;
+    ARENA.code = code;
+    this.view('room');
+    await this.renderRoomLB();
+  },
+
+  async joinRoom(){
+    const raw = (_('roomCodeInput').value||'').trim().toUpperCase();
+    if(raw.length<4){ this.toast('Nhập mã phòng hợp lệ','#ff8866'); return; }
+    const ok = await ARENA.exists(raw);
+    if(!ok){ this.toast('❌ Không tìm thấy phòng','#ff5566'); return; }
+    this.roomCode = raw;
+    ARENA.code = raw;
+    _('roomCodeInput').value='';
+    this.view('room');
+    await this.renderRoomLB();
+  },
+
+  leaveRoom(){
+    clearInterval(this._roomPoll);
+    this.roomCode=null;
+    this.view('modesel');
+  },
+
+  async renderRoomLB(){
+    if(!this.roomCode) return;
+    _('roomCodeDisplay').textContent=this.roomCode;
+    const c=_('roomLB');
+    const entries = await ARENA.getLB(this.roomCode);
+    if(!entries.length){
+      c.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.32);padding:20px 0;font-size:.82rem">Chưa ai chơi trong phòng này.<br>Hãy là người đầu tiên! 🚀</div>';
+    }else{
+      const M=['🥇','🥈','🥉'];
+      c.innerHTML = entries.slice(0,50).map((e,i)=>`
+        <div class="lbRow${e.isMe?' me':''}">
+          <span class="lbRank">${i<3?M[i]:i+1}</span>
+          <span class="lbName">${esc(e.name)}</span>
+          ${e.isMe?'<span class="lbMe">Bạn</span>':''}
+          <span class="lbScore">${e.score}</span>
+          <span class="lbTime">×${e.bestCombo||1}</span>
+        </div>`).join('');
+    }
+    /* Poll for opponents' scores while the room screen is open —
+       gives a "live" feel without needing a realtime backend. */
+    clearInterval(this._roomPoll);
+    this._roomPoll = setInterval(()=>{ if(this.s==='room') this.renderRoomLB(); }, 4000);
+  },
+
+  async copyRoomCode(){
+    if(!this.roomCode) return;
+    const text = `⚔️ Đấu với tôi trong Circle Rush! Mã phòng: ${this.roomCode}\nMỗi người chơi 45 giây — ai điểm cao nhất thắng!`;
+    try{
+      await navigator.clipboard.writeText(text);
+      this.toast('📋 Đã copy lời mời!','#8ab4ff');
+    }catch(e){
+      this.toast('Mã phòng: '+this.roomCode,'#8ab4ff');
+    }
+  },
+
+  startArenaRun(){
+    clearInterval(this._roomPoll);
+    this.mode='arena';
+    this.score=0; this.combo=1; this.lct=0; this.bestCombo=0; this.cpa=0; this.level=1;
+    this.scoreSaved=false; this.arenaTimeLeft=45; this._isWorldRecordRun=false;
+    this.cActive=false; this.cClickable=false;
+    clearTimeout(this.cTO); clearInterval(this.gTO); cancelAnimationFrame(this.cRAF);
+
+    _('stLevel').style.display='none';
+    _('stSpeed').style.display='none';
+    _('stHearts').style.display='none';
+    _('tmLabel').textContent='CÒN LẠI';
+
+    this.view('play');
+    this.updateArenaTimer();
+    this.gTO=setInterval(()=>{
+      this.arenaTimeLeft--;
+      this.updateArenaTimer();
+      if(this.arenaTimeLeft<=0){ clearInterval(this.gTO); this.endArenaRun(); }
+    },1000);
+
+    this.hud();
+    setTimeout(()=>this.spawn(),140);
+  },
+
+  updateArenaTimer(){
+    const t=Math.max(0,this.arenaTimeLeft);
+    const el=_('tm');
+    el.textContent=`${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
+    el.style.color = t<=10 ? '#ff5566' : '';
+  },
+
+  async submitArenaScore(){
+    if(!this.roomCode) return;
+    await ARENA.submit(this.roomCode, this.score, this.bestCombo);
+  },
+
+  async endArenaRun(){
+    clearTimeout(this.cTO); cancelAnimationFrame(this.cRAF); clearInterval(this.gTO);
+    this.cActive=false; this.cClickable=false;
+    _('C').style.pointerEvents='none';
+    this.sfx('gameover');
+    _('tmLabel').textContent='TIME';
+    _('tm').style.color='';
+
+    if(!this.scoreSaved){
+      await this.submitArenaScore();
+      this.scoreSaved=true;
+    }
+
+    this.view('room');
+    await this.renderRoomLB();
+
+    const entries = await ARENA.getLB(this.roomCode);
+    const rank = entries.findIndex(e=>e.isMe)+1;
+    if(navigator.vibrate) navigator.vibrate([30,40,30,40,60]);
+    if(rank===1) this.toast('🏆 ĐANG DẪN ĐẦU PHÒNG!','#ffd700');
+    else if(rank>0) this.toast(`Hạng #${rank} trong phòng`,'#8ab4ff');
+  },
+
+  /* ─────────────────────────────────────────
+     view() — screen switcher
+  ───────────────────────────────────────── */
+  view(name){
+    const map={menu:'s0',modesel:'s6',play:'s1',pause:'s2',cfg:'s3',how:'s4',lb:'s5',gameover:'s7',share:'s8',nameentry:'s9',arenaLobby:'s10',room:'s11'};
+    if(name!=='room') clearInterval(this._roomPoll);
+    document.querySelectorAll('.scr').forEach(el=>el.classList.add('hid'));
+    const el=_(map[name]);
+    if(el) el.classList.remove('hid');
+    this.s=name;
+    if(name==='lb') this.renderLB(this.lbTab);
+    if(name==='nameentry') setTimeout(()=>_('nameInput').focus(),120);
+  },
+
+  /* ─────────────────────────────────────────
+     renderLB(mode) — load from shared storage
+     and render with rank medals, "Bạn" badge,
+     score + time columns.  Primary sort: score
+     DESC.  Tiebreaker: time DESC (surviving
+     longer under faster circles is harder).
+  ───────────────────────────────────────── */
+  async renderLB(mode='classic'){
+    this.lbTab=mode;
+    _('tabClassic').classList.toggle('act', mode==='classic');
+    _('tabSurvival').classList.toggle('act', mode==='survival');
+    const c=_('lbc');
+    c.innerHTML='<div class="lbLoading">Đang tải bảng xếp hạng…</div>';
+
+    const entries=await PLAYER.getLB(mode);
+
+    if(!entries.length){
+      c.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.32);padding:28px 0;font-size:.85rem">Chưa có ai trên bảng này.<br>Hãy là người đầu tiên! 🚀</div>';
+      return;
+    }
+
+    const M=['🥇','🥈','🥉'];
+    const fmtTime=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+    c.innerHTML=entries.slice(0,100).map((e,i)=>`
+      <div class="lbRow${e.isMe?' me':''}">
+        <span class="lbRank">${i<3?M[i]:i+1}</span>
+        <span class="lbName">${esc(e.name)}</span>
+        ${e.isMe?'<span class="lbMe">Bạn</span>':''}
+        <span class="lbScore">${e.score}</span>
+        <span class="lbTime">${fmtTime(e.time)}</span>
+      </div>`).join('');
+  },
+
+  switchLBTab(mode){ this.renderLB(mode); },
+
+  /* ─────────────────────────────────────────
+     confirmName() / skipName() — first visit
+  ───────────────────────────────────────── */
+  async confirmName(){
+    const raw=_('nameInput').value.trim();
+    const name=raw.slice(0,20)||'Ẩn danh';
+    await PLAYER.setName(name);
+    this.view('menu');
+  },
+  async skipName(){
+    await PLAYER.setName('Ẩn danh');
+    this.view('menu');
+  },
+
+  /* ─────────────────────────────────────────
+     Settings handlers
+  ───────────────────────────────────────── */
+  togSound(el){ this.sound=!this.sound; el.classList.toggle('on',this.sound); },
+  setDif(btn){
+    document.querySelectorAll('.db[data-dif]').forEach(b=>b.classList.remove('act'));
+    btn.classList.add('act'); this.dif=btn.dataset.dif;
+  },
+  setND(btn){
+    document.querySelectorAll('.db[data-nd]').forEach(b=>b.classList.remove('act'));
+    btn.classList.add('act'); this.nd=parseInt(btn.dataset.nd);
+  },
+  togCursor(el){
+    this.CUR.on=!this.CUR.on;
+    el.classList.toggle('on',this.CUR.on);
+    if(!this.CUR.on){ _('cursorGlow').classList.remove('show'); _('cursorDot').classList.remove('show'); }
+  },
+  setCurSpeed(btn){
+    document.querySelectorAll('.db[data-cur]').forEach(b=>b.classList.remove('act'));
+    btn.classList.add('act'); this.CUR.k=parseFloat(btn.dataset.cur);
+  },
+  togPerf(el){
+    this.perf=!this.perf;
+    el.classList.toggle('on', this.perf);
+  },
+  togStreamer(el){
+    this.streamerMode=!this.streamerMode;
+    el.classList.toggle('on', this.streamerMode);
+    _('W').classList.toggle('streamer', this.streamerMode);
+  }
+};
+
+/* ════════════════════════════════════════════
+   ARENA MISS DETECTOR — clicking empty space
+   while a circle is live counts as "bấm hụt".
+   Attached once; the circle's own handler calls
+   stopPropagation() so a real hit never double-fires.
+════════════════════════════════════════════ */
+_('arena').addEventListener('click', e=>{
+  if(e.target.closest('#C')) return;
+  G.handleEmptyClick();
+});
+
+/* ════════════════════════════════════════════
+   CURSOR TRAIL — cosmetic only, own rAF loop
+   with lerp smoothing. Real system cursor stays
+   fully visible & precise; clicking always uses
+   native hit-testing, so this never breaks accuracy.
+════════════════════════════════════════════ */
+(()=>{
+  const W=_('W'), glow=_('cursorGlow'), dot=_('cursorDot');
+  let wRect=W.getBoundingClientRect();
+  const refreshRect=()=>{ wRect=W.getBoundingClientRect(); };
+  window.addEventListener('resize', refreshRect);
+
+  W.addEventListener('mousemove', e=>{
+    G.CUR.tx=e.clientX-wRect.left; G.CUR.ty=e.clientY-wRect.top;
+    if(!G.CUR.init){ G.CUR.x=G.CUR.tx; G.CUR.y=G.CUR.ty; G.CUR.init=true; }
+    if(G.CUR.on){ glow.classList.add('show'); dot.classList.add('show'); }
+  }, {passive:true});
+  W.addEventListener('mouseleave', ()=>{ glow.classList.remove('show'); dot.classList.remove('show'); }, {passive:true});
+
+  (function loop(){
+    if(G.CUR.on && G.CUR.init){
+      G.CUR.x+=(G.CUR.tx-G.CUR.x)*G.CUR.k;
+      G.CUR.y+=(G.CUR.ty-G.CUR.y)*G.CUR.k;
+      glow.style.transform=`translate3d(${G.CUR.x}px,${G.CUR.y}px,0) translate(-50%,-50%)`;
+      dot.style.transform=`translate3d(${G.CUR.tx}px,${G.CUR.ty}px,0) translate(-50%,-50%)`;
+    }
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* ════════════════════════════════════════════
+   ANIMATED BACKGROUND — canvas particle field
+════════════════════════════════════════════ */
+(()=>{
+  const cv=_('BG'), W=_('W'), ctx=cv.getContext('2d');
+  const resize=()=>{ cv.width=W.clientWidth; cv.height=W.clientHeight; };
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* Pre-render each bubble's glow ONCE as a small sprite canvas.
+     Per-frame work becomes a single cheap drawImage() instead of
+     constructing a fresh radial gradient + arc fill every frame. */
+  const makeBubble=()=>{
+    const r=7+Math.random()*46;
+    const h=188+Math.random()*74;
+    const a=.016+Math.random()*.052;
+    const pad=4, sz=Math.ceil((r+pad)*2);
+    const sc=document.createElement('canvas');
+    sc.width=sz; sc.height=sz;
+    const sctx=sc.getContext('2d');
+    const g=sctx.createRadialGradient(sz/2,sz/2,0,sz/2,sz/2,r);
+    g.addColorStop(0,`hsla(${h},82%,68%,${a*1.7})`);
+    g.addColorStop(.6,`hsla(${h},75%,58%,${a*.55})`);
+    g.addColorStop(1,`hsla(${h},72%,55%,0)`);
+    sctx.fillStyle=g;
+    sctx.beginPath(); sctx.arc(sz/2,sz/2,r,0,Math.PI*2); sctx.fill();
+    return {
+      x:Math.random()*cv.width, y:Math.random()*cv.height,
+      r, vx:(Math.random()-.5)*.30, vy:(Math.random()-.5)*.30,
+      sprite:sc, sz
+    };
+  };
+  const bubbles=Array.from({length:18}, makeBubble);
+
+  const dots=Array.from({length:42},()=>({
+    x:Math.random()*cv.width,
+    y:Math.random()*cv.height,
+    r:.5+Math.random()*1.5,
+    a:.1+Math.random()*.55,
+    t:Math.random()*Math.PI*2,
+    spd:.012+Math.random()*.025
+  }));
+
+  (function frame(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.fillStyle='#07071a';
+    ctx.fillRect(0,0,cv.width,cv.height);
+
+    if(!G.perf){
+      bubbles.forEach(b=>{
+        b.x+=b.vx; b.y+=b.vy;
+        if(b.x<-b.r) b.x=cv.width+b.r;
+        if(b.x>cv.width+b.r) b.x=-b.r;
+        if(b.y<-b.r) b.y=cv.height+b.r;
+        if(b.y>cv.height+b.r) b.y=-b.r;
+        ctx.drawImage(b.sprite, b.x-b.sz/2, b.y-b.sz/2);
+      });
+
+      dots.forEach(d=>{
+        d.t+=d.spd;
+        const alpha=d.a*(0.5+0.5*Math.sin(d.t));
+        ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(200,220,255,${alpha})`; ctx.fill();
+      });
+    }
+
+    requestAnimationFrame(frame);
+  })();
+})();
+
+/* ── Boot — hide everything until identity resolves ── */
+document.querySelectorAll('.scr').forEach(el=>el.classList.add('hid'));
+PLAYER.init();
+</script>
+</body>
+</html>
