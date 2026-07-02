@@ -46,7 +46,28 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
 
 /* ── STREAK / GLOBAL STAT BADGES ── */
 #streakBadge{font-size:.72rem;color:#ffb347;background:rgba(255,150,50,.1);border:1px solid rgba(255,150,50,.22);border-radius:16px;padding:3px 13px;margin-bottom:8px;display:inline-block}
-#globalStat{font-size:.68rem;color:rgba(160,190,255,.5);margin-bottom:14px}
+#globalStat{font-size:.68rem;color:rgba(160,190,255,.5);margin-bottom:4px}
+#onlineNow{font-size:.68rem;color:#5eead4;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:5px}
+#onlineDot{width:7px;height:7px;border-radius:50%;background:#22e0a0;box-shadow:0 0 8px rgba(34,224,160,.9);display:inline-block;animation:dotPulse 1.8s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.75)}}
+
+/* ── RANK BADGE ── */
+#rankBadge{font-size:.76rem;font-weight:800;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:4px 14px;margin-bottom:10px;display:none;cursor:pointer;transition:all .2s}
+#rankBadge:hover{background:rgba(255,255,255,.12);transform:scale(1.04)}
+
+/* ── ACHIEVEMENTS ── */
+.achRow{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:7px;transition:all .2s}
+.achRow.unlocked{background:rgba(160,120,255,.12);border-color:rgba(180,140,255,.32)}
+.achIco{font-size:1.5rem;width:32px;text-align:center;flex-shrink:0}
+.achRow.locked .achIco{filter:grayscale(1) brightness(.55)}
+.achName{font-weight:700;font-size:.85rem;color:#fff}
+.achRow.locked .achName{color:rgba(255,255,255,.35)}
+.achDesc{font-size:.68rem;color:rgba(255,255,255,.4);margin-top:2px}
+
+/* ── PROFILE STATS ── */
+.statBox{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 13px}
+.statVal{font-size:1.3rem;font-weight:800;color:#8ab4ff}
+.statLbl{font-size:.6rem;color:rgba(255,255,255,.4);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
 
 /* ── HUD ── */
 #hdr{position:absolute;top:0;left:0;right:0;height:62px;display:flex;align-items:center;justify-content:space-around;padding:0 14px;background:rgba(5,5,21,.94);border-bottom:1px solid rgba(255,255,255,.06);z-index:5}
@@ -172,6 +193,16 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
 @keyframes streamerGlow{0%,100%{box-shadow:0 0 60px rgba(120,170,255,.28)}50%{box-shadow:0 0 95px rgba(255,110,199,.4)}}
 #W.streamer{animation:streamerGlow 4s ease-in-out infinite}
 </style>
+<!--
+  ═══════════════════════════════════════════════════════════
+  🔥 FIREBASE SDK — powers cross-device PvP room sync.
+  If this CDN fails to load (network down, ad-blocker, etc.),
+  the game still boots fine — only PvP will show a clear error.
+  Classic and Survival never depend on this.
+  ═══════════════════════════════════════════════════════════
+-->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
 </head>
 <body>
 <h2 class="sr-only">Circle Rush — game nhấp vào hình tròn để ghi điểm, có chế độ Sinh Tồn 3 mạng</h2>
@@ -186,13 +217,16 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
 <div class="scr" id="s0">
   <div id="logo">⊙ CIRCLE RUSH</div>
   <div id="tag">tap · click · score</div>
+  <div id="rankBadge" onclick="G.view('profile')"></div>
   <div id="best"></div>
   <div id="streakBadge" style="display:none"></div>
   <div id="globalStat"></div>
+  <div id="onlineNow"><span id="onlineDot"></span><span id="onlineText"></span></div>
   <div id="mbts">
     <button class="mb play" onclick="G.view('modesel')">▶&nbsp;&nbsp;PLAY</button>
     <button class="mb" onclick="G.view('how')">?&nbsp;&nbsp;HOW TO PLAY</button>
     <button class="mb" onclick="G.view('lb')">⊞&nbsp;&nbsp;LEADERBOARD</button>
+    <button class="mb" onclick="G.view('profile')">📊&nbsp;&nbsp;HỒ SƠ</button>
     <button class="mb" onclick="G.view('cfg')">⚙&nbsp;&nbsp;SETTINGS</button>
   </div>
 </div>
@@ -425,6 +459,37 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
   </div>
 </div>
 
+<!-- ════ ACHIEVEMENTS ════ -->
+<div class="scr hid ov" id="s12">
+  <button class="closeX" onclick="G.view('profile')">✕</button>
+  <div class="pnl" style="width:390px">
+    <div class="ptt" style="margin-bottom:4px">🏅 THÀNH TỰU</div>
+    <div id="achProgress" style="text-align:center;font-size:.72rem;color:rgba(255,255,255,.4);margin-bottom:16px">0/12 mở khóa</div>
+    <div id="achList" style="max-height:400px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- ════ PROFILE ════ -->
+<div class="scr hid ov" id="s13">
+  <button class="closeX" onclick="G.view('menu')">✕</button>
+  <div class="pnl" style="width:390px;text-align:center">
+    <div id="profRankIco" style="font-size:2.6rem;line-height:1"></div>
+    <div class="ptt" style="margin-bottom:2px" id="profName">-</div>
+    <div id="profRankName" style="font-size:.8rem;font-weight:700;margin-bottom:20px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;text-align:left;margin-bottom:16px">
+      <div class="statBox"><div class="statVal" id="pTotalRuns">0</div><div class="statLbl">Ván đã chơi</div></div>
+      <div class="statBox"><div class="statVal" id="pTotalScore">0</div><div class="statLbl">Tổng điểm trọn đời</div></div>
+      <div class="statBox"><div class="statVal" id="pBestCombo">×1</div><div class="statLbl">Combo cao nhất</div></div>
+      <div class="statBox"><div class="statVal" id="pBestSurvival">0s</div><div class="statLbl">Sống sót lâu nhất</div></div>
+      <div class="statBox"><div class="statVal" id="pBossClicks">0</div><div class="statLbl">Boss đã hạ</div></div>
+      <div class="statBox"><div class="statVal" id="pArenaWins">0</div><div class="statLbl">Thắng PvP</div></div>
+    </div>
+    <div id="profMemberSince" style="font-size:.66rem;color:rgba(255,255,255,.35);margin-bottom:16px"></div>
+    <button class="pb2 prim" onclick="G.view('achievements')">🏅 XEM THÀNH TỰU (<span id="achCount">0</span>/12)</button>
+    <button class="pb2" onclick="G.view('menu')">← QUAY LẠI</button>
+  </div>
+</div>
+
 <!-- ════ NAME ENTRY ════ -->
 <div class="scr hid ov" id="s9">
   <div class="pnl" style="text-align:center">
@@ -448,40 +513,136 @@ const _=id=>document.getElementById(id);
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
 /* ════════════════════════════════════════════
-   STORE — unified async key-value storage.
-   ▸ In Claude artifact: uses window.storage
-     (true cross-session, cross-device persistence
-     built into the artifact sandbox).
-   ▸ Anywhere else (file://, CDN host, etc.):
-     falls back to localStorage so the game still
-     works offline with device-local persistence.
+   🔥 FIREBASE CONFIG — REQUIRED for PvP to sync
+   across different devices/browsers.
 
-   Personal keys (shared=false):  player ID, name.
-   Shared   keys (shared=true ):  global leaderboards
-     visible to every player who opens this artifact.
+   Without this filled in, the game still boots
+   and Classic/Survival work exactly as before —
+   only the PvP screens will show a clear
+   "not configured" message instead of crashing
+   or silently failing.
+
+   HOW TO GET YOUR OWN CONFIG (free):
+   1. Go to https://console.firebase.google.com
+   2. Click "Add project" → name it anything → finish setup.
+   3. In the left sidebar: Build → Realtime Database → Create Database
+      → pick any region → start in "Test mode" (see security-rules
+      note at the bottom of this file for what to set later).
+   4. Back in Project Overview, click the "</>" (Web) icon to
+      register a new Web App → give it any nickname → Register app.
+   5. Firebase shows you a firebaseConfig object — copy every value
+      from it into FIREBASE_CONFIG below, replacing the placeholders.
+   6. Save this file and re-upload it to GitHub — PvP will now sync
+      between any two devices, anywhere.
+════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCSWgxCn0_l9dGh9C-ZQi_UYSLwRVWfDeE",
+  authDomain: "circle-rush-pvp.firebaseapp.com",
+  databaseURL: "https://circle-rush-pvp-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "circle-rush-pvp",
+  storageBucket: "circle-rush-pvp.firebasestorage.app",
+  messagingSenderId: "358842616459",
+  appId: "1:358842616459:web:3eb8ebcd21598cbfc2628e"
+};
+
+/* ════════════════════════════════════════════
+   STORE — unified async key-value storage.
+
+   ▸ Personal keys (getP/setP): always localStorage.
+     Tied to this one browser/device — player name,
+     ID, and personal bests never need to leave it.
+
+   ▸ Shared keys (getS/setS): Firebase Realtime
+     Database. This is what makes PvP room codes,
+     the global leaderboard, and the live "online
+     now" counter actually visible across DIFFERENT
+     devices — the whole reason PvP needs a real
+     backend instead of localStorage (which never
+     leaves the browser it was written in).
+
+   Every call site elsewhere in the game still just
+   calls STORE.getS/setS exactly as before — this
+   object is the ONLY place that changed.
 ════════════════════════════════════════════ */
 const STORE = (() => {
-  const ws = typeof window !== 'undefined' && !!window.storage;
-  const safe = async (fn, def=null) => { try { return await fn(); } catch { return def; } };
+  let fbDB=null, fbReady=false, fbError=null, fbInitTried=false;
+
+  function ensureFirebase(){
+    if (fbInitTried) return;
+    fbInitTried = true;
+    try {
+      if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey || String(FIREBASE_CONFIG.apiKey).includes('YOUR_')) {
+        fbError = 'missing_config';
+        return;
+      }
+      if (typeof firebase === 'undefined') {
+        fbError = 'sdk_not_loaded';
+        return;
+      }
+      firebase.initializeApp(FIREBASE_CONFIG);
+      fbDB = firebase.database();
+      fbReady = true;
+    } catch(e) {
+      fbError = 'init_failed';
+      console.error('[Circle Rush] Firebase init failed:', e);
+    }
+  }
+
+  /* Realtime Database keys can't contain . # $ [ ] / — the game
+     never actually uses those characters in its keys today, but
+     this keeps things safe if that ever changes. */
+  const keySafe = k => String(k).replace(/[.#$\[\]/]/g, '_');
+
+  const withTimeout = (p, ms=8000) => Promise.race([
+    p,
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), ms))
+  ]);
 
   return {
-    /* personal — tied to this browser / artifact user */
+    /* personal — tied to this browser/device, never needs the network */
     async getP(k, def=null) {
-      if (ws) return safe(async()=>{ const r=await window.storage.get(k); return r?JSON.parse(r.value):def; }, def);
       try { const v=localStorage.getItem('crp_'+k); return v!=null?JSON.parse(v):def; } catch { return def; }
     },
     async setP(k, v) {
-      if (ws) { safe(()=>window.storage.set(k, JSON.stringify(v))); return; }
       try { localStorage.setItem('crp_'+k, JSON.stringify(v)); } catch {}
     },
-    /* shared — visible to ALL players of this artifact */
+
+    /* shared — Firebase Realtime Database. Never throws: any failure
+       (missing config, offline, blocked CDN, timeout) just resolves
+       to the default value/null, exactly like the old implementation
+       did — so every existing call site keeps working unchanged and
+       Classic/Survival can never be crashed by a PvP/network issue. */
     async getS(k, def=null) {
-      if (ws) return safe(async()=>{ const r=await window.storage.get(k,true); return r?JSON.parse(r.value):def; }, def);
-      try { const v=localStorage.getItem('crs_'+k); return v!=null?JSON.parse(v):def; } catch { return def; }
+      ensureFirebase();
+      if (!fbReady) return def;
+      try {
+        const snap = await withTimeout(fbDB.ref('circleRush/'+keySafe(k)).once('value'));
+        const val = snap.val();
+        return val!=null ? val : def;
+      } catch(e) { return def; }
     },
     async setS(k, v) {
-      if (ws) { safe(()=>window.storage.set(k, JSON.stringify(v), true)); return; }
-      try { localStorage.setItem('crs_'+k, JSON.stringify(v)); } catch {}
+      ensureFirebase();
+      if (!fbReady) return null;
+      try {
+        await withTimeout(fbDB.ref('circleRush/'+keySafe(k)).set(v));
+        return {key:k, value:v, shared:true};
+      } catch(e) { return null; }
+    },
+
+    /* Proactive connectivity probe. PvP screens call this BEFORE
+       creating/joining a room so they can show an honest, specific
+       reason ("server not configured" / "no internet" / etc.)
+       instead of a misleading "room not found". */
+    async checkSharedConnection(){
+      ensureFirebase();
+      if (!fbReady) return {ok:false, reason: fbError};
+      try {
+        await withTimeout(fbDB.ref('.info/connected').once('value'), 6000);
+        return {ok:true};
+      } catch(e) {
+        return {ok:false, reason:'network'};
+      }
     }
   };
 })();
@@ -502,6 +663,48 @@ const STORE = (() => {
       so equal-score players who lasted longer rank
       higher.  This rewards both speed AND endurance.
 ════════════════════════════════════════════ */
+/* ════════════════════════════════════════════
+   RANK TIERS — Bronze → Master, based on a
+   player's best-ever score in either mode.
+   Purely a status/progression display; doesn't
+   affect gameplay or matchmaking in any way.
+════════════════════════════════════════════ */
+const RANKS = [
+  {min:0,    name:'Đồng',      icon:'🥉', color:'#cd7f32'},
+  {min:50,   name:'Bạc',       icon:'🥈', color:'#c0c0c0'},
+  {min:150,  name:'Vàng',      icon:'🥇', color:'#ffd700'},
+  {min:300,  name:'Bạch Kim',  icon:'💎', color:'#7ee8e8'},
+  {min:600,  name:'Kim Cương', icon:'💠', color:'#7ea8ff'},
+  {min:1000, name:'Cao Thủ',   icon:'👑', color:'#ff6ec7'},
+];
+function getRank(score){
+  let r=RANKS[0];
+  for(const tier of RANKS){ if(score>=tier.min) r=tier; }
+  return r;
+}
+
+/* ════════════════════════════════════════════
+   ACHIEVEMENTS — checked against a context that
+   merges lifetime stats with the just-finished
+   run's numbers (score/combo of THIS run only,
+   prefixed with an underscore to distinguish
+   from the lifetime totals of the same name).
+════════════════════════════════════════════ */
+const ACHIEVEMENTS = [
+  {id:'first_score',    icon:'🎯', name:'Cú Click Đầu Tiên',   desc:'Ghi điểm lần đầu tiên',                check:s=>s.totalRuns>=1},
+  {id:'century',        icon:'💯', name:'Trăm Điểm',           desc:'Đạt 100 điểm trong 1 ván',             check:s=>(s._runScore||0)>=100},
+  {id:'kilo',           icon:'🚀', name:'Nghìn Điểm',          desc:'Đạt 1000 điểm trong 1 ván',            check:s=>(s._runScore||0)>=1000},
+  {id:'combo_master',   icon:'⚡', name:'Bậc Thầy Combo',      desc:'Đạt combo ×8',                          check:s=>s.bestComboEver>=8},
+  {id:'boss_hunter',    icon:'👑', name:'Thợ Săn Boss',        desc:'Hạ gục 10 vòng tròn BOSS',              check:s=>s.bossClicks>=10},
+  {id:'survivor_60',    icon:'⏱️', name:'Sống Sót 60 Giây',    desc:'Trụ vững 60s trong Sinh Tồn',           check:s=>s.bestSurvivalTime>=60},
+  {id:'survivor_120',   icon:'🛡️', name:'Chiến Binh Bất Tử',  desc:'Trụ vững 120s trong Sinh Tồn',          check:s=>s.bestSurvivalTime>=120},
+  {id:'arena_champ',    icon:'⚔️', name:'Vua Đấu Trường',      desc:'Thắng hạng #1 trong 1 phòng PvP',       check:s=>s.arenaWins>=1},
+  {id:'record_breaker', icon:'🌍', name:'Kỷ Lục Gia',          desc:'Lập kỷ lục thế giới',                   check:s=>s.worldRecords>=1},
+  {id:'golden_touch',   icon:'✨', name:'Golden Touch',        desc:'Trải nghiệm 5 lần Golden Rush',         check:s=>s.goldenRushesSeen>=5},
+  {id:'dedicated',      icon:'🔥', name:'Kiên Trì',            desc:'Chơi 20 ván',                           check:s=>s.totalRuns>=20},
+  {id:'legend',         icon:'🏆', name:'Huyền Thoại',         desc:'Tổng 5000 điểm trọn đời',               check:s=>s.totalScoreEver>=5000},
+];
+
 const PLAYER = {
   id: null, name: null,
 
@@ -525,6 +728,10 @@ const PLAYER = {
     ]);
     const top = Math.max(cbest.score, sbest.score);
     if (top > 0) { const b=_('best'); if(b) b.textContent = `Best: ${top} pts`; }
+
+    const rank = getRank(top);
+    const rb=_('rankBadge');
+    if(rb){ rb.innerHTML = `${rank.icon} Hạng ${rank.name}`; rb.style.color=rank.color; rb.style.display='inline-block'; }
 
     /* Daily streak — a simple FOMO/return-loop hook.
        Compares last-played calendar date to today:
@@ -564,8 +771,6 @@ const PLAYER = {
     }
   },
 
-  /* Submit score.  Only updates this player's entry if the new result
-     is strictly better (score higher, or same score but longer time). */
   /* Submit score.  Only updates this player's entry if the new result
      is strictly better (score higher, or same score but longer time).
      Returns {isPersonalBest, isWorldRecord} so the caller can trigger
@@ -618,6 +823,64 @@ const PLAYER = {
     return Object.entries(lb)
       .map(([id, e]) => ({ ...e, isMe: id === this.id }))
       .sort((a, b) => b.score - a.score || b.time - a.time);
+  },
+
+  /* ─────────────────────────────────────────
+     LIFETIME STATS + ACHIEVEMENTS — a single
+     personal key holding running totals across
+     every run ever played, plus which achievement
+     ids have been unlocked. Kept as one object to
+     minimize storage calls (read-modify-write).
+  ───────────────────────────────────────── */
+  stats: null,
+
+  defaultStats(){
+    return {
+      totalRuns:0, totalScoreEver:0, bestComboEver:0, bestSurvivalTime:0,
+      bossClicks:0, goldenRushesSeen:0, arenaWins:0, worldRecords:0,
+      unlocked:[], memberSince: new Date().toISOString().slice(0,10)
+    };
+  },
+
+  async loadStats(){
+    if(!this.stats) this.stats = await STORE.getP('pstats', this.defaultStats());
+    return this.stats;
+  },
+
+  /* Called once per completed run — folds this run's numbers into
+     lifetime totals and persists in a single write. */
+  async recordRunStats({score=0, combo=0, survivalSeconds=0, bossClicks=0, goldenRushes=0, arenaWin=false, worldRecord=false}={}){
+    await this.loadStats();
+    const s=this.stats;
+    s.totalRuns=(s.totalRuns||0)+1;
+    s.totalScoreEver=(s.totalScoreEver||0)+score;
+    s.bestComboEver=Math.max(s.bestComboEver||0, combo);
+    s.bestSurvivalTime=Math.max(s.bestSurvivalTime||0, survivalSeconds);
+    s.bossClicks=(s.bossClicks||0)+bossClicks;
+    s.goldenRushesSeen=(s.goldenRushesSeen||0)+goldenRushes;
+    if(arenaWin) s.arenaWins=(s.arenaWins||0)+1;
+    if(worldRecord) s.worldRecords=(s.worldRecords||0)+1;
+    if(!s.unlocked) s.unlocked=[];
+    if(!s.memberSince) s.memberSince=new Date().toISOString().slice(0,10);
+    await STORE.setP('pstats', s);
+    return s;
+  },
+
+  /* Checks every achievement definition against current lifetime
+     stats + this run's numbers, unlocking any newly-earned ones.
+     Returns the array of NEWLY unlocked achievement objects. */
+  async checkAchievements(runContext={}){
+    await this.loadStats();
+    const ctx = {...this.stats, ...runContext};
+    const newly=[];
+    for(const a of ACHIEVEMENTS){
+      if(!this.stats.unlocked.includes(a.id) && a.check(ctx)){
+        this.stats.unlocked.push(a.id);
+        newly.push(a);
+      }
+    }
+    if(newly.length) await STORE.setP('pstats', this.stats);
+    return newly;
   }
 };
 
@@ -709,6 +972,58 @@ const ARENA = {
 };
 
 /* ════════════════════════════════════════════
+   PRESENCE — "people online right now" counter.
+
+   Dedup rule (exactly as requested): each browser/
+   device has ONE stable identity (PLAYER.id, the
+   same UUID used everywhere else in the game).
+   Opening the site in 10 tabs, or refreshing 100
+   times, still writes to the SAME key — so it
+   still counts as 1. A genuinely different device
+   has a different id, so it counts separately.
+
+   Note: this can't see raw IP addresses — a static
+   page has no way to. A stable per-device identity
+   is actually the more reliable signal anyway (one
+   IP can represent a whole house/office of people;
+   one person can have several IPs), and it produces
+   exactly the counting behavior you described.
+
+   Mechanics: every device "checks in" to ONE shared
+   key (an object of id → last-seen timestamp) every
+   25s while the tab is open. Anyone whose last-seen
+   is older than 90s is pruned on the next check-in
+   by ANY player, so closed tabs drop off automatically
+   within about a minute and a half — no server-side
+   cleanup job needed.
+════════════════════════════════════════════ */
+const PRESENCE = {
+  _interval: null,
+  WINDOW_MS: 90000,
+  HEARTBEAT_MS: 25000,
+
+  async beat(){
+    if(!PLAYER.id) return;
+    try{
+      const now = Date.now();
+      const map = await STORE.getS('online_presence', {});
+      map[PLAYER.id] = now;
+      for(const id in map){ if(now - map[id] > this.WINDOW_MS) delete map[id]; }
+      await STORE.setS('online_presence', map);
+      const count = Object.keys(map).length;
+      const el = _('onlineText');
+      if(el) el.textContent = count>0 ? `${count.toLocaleString('vi-VN')} người đang online` : '';
+    }catch(e){}
+  },
+
+  start(){
+    this.beat();
+    clearInterval(this._interval);
+    this._interval = setInterval(()=>this.beat(), this.HEARTBEAT_MS);
+  }
+};
+
+/* ════════════════════════════════════════════
    GAME ENGINE
    • ONE persistent AudioContext (never recreated)
    • Web Animations API instead of forced-reflow hacks
@@ -721,6 +1036,7 @@ const G={
   s:'menu', mode:'classic',
   score:0, time:0, level:1, combo:1, lct:0, cpa:0, bestCombo:0,
   hearts:3, shielded:false, scoreSaved:false, survBest:0, perf:false, streamerMode:false,
+  bossClicksThisRun:0, goldenRushesThisRun:0,
   goldenActive:false, _goldenTick:null, _isWorldRecordRun:false,
   _circAnim:null,   // explicit animation ref — the ONLY way to reliably cancel WAAPI
 
@@ -775,6 +1091,7 @@ const G={
     this.mode=mode||'classic';
     this.score=0; this.time=0; this.level=1; this.combo=1; this.lct=0; this.cpa=0;
     this.bestCombo=0; this.hearts=3; this.shielded=false; this.scoreSaved=false;
+    this.bossClicksThisRun=0; this.goldenRushesThisRun=0;
     this.cActive=false; this.cClickable=false;
     this._isWorldRecordRun=false;
     this.goldenActive=false; clearInterval(this._goldenTick);
@@ -828,6 +1145,7 @@ const G={
 
   triggerGoldenRush(){
     this.goldenActive=true;
+    this.goldenRushesThisRun++;
     _('goldenBanner').classList.add('show');
     _('goldenOverlay').classList.add('show');
     this.sfx('golden');
@@ -1081,6 +1399,7 @@ const G={
       this.toast(`👑 BOSS! +${pts}`,'#ff6ec7');
       this.shakeScreen(.8);
       this.particles();
+      this.bossClicksThisRun++;
       if(navigator.vibrate) navigator.vibrate([20,30,20,30,50]);
     }
 
@@ -1273,13 +1592,16 @@ const G={
      toast() — pooled-free small achievement popup
   ───────────────────────────────────────── */
   toast(text,color){
-    const arena=_('arena');
+    /* Appended to #W (not #arena) so it's visible from EVERY screen —
+       including the PvP Lobby/Room screens, which sit outside #arena
+       and would otherwise render this toast invisibly behind opacity:0. */
+    const host=_('W');
     const n=document.createElement('div');
     n.textContent=text;
     const fsize = this.streamerMode ? '1.6rem' : '1.25rem';
     const dur = this.streamerMode ? 1500 : 1100;
-    n.style.cssText=`position:absolute;top:18%;left:50%;transform:translate(-50%,-50%);font-size:${fsize};font-weight:900;color:${color};text-shadow:0 0 16px ${color}aa,0 2px 6px rgba(0,0,0,.8);pointer-events:none;z-index:22;white-space:nowrap`;
-    arena.appendChild(n);
+    n.style.cssText=`position:absolute;top:20%;left:50%;transform:translate(-50%,-50%);font-size:${fsize};font-weight:900;color:${color};text-shadow:0 0 16px ${color}aa,0 2px 6px rgba(0,0,0,.8);pointer-events:none;z-index:60;white-space:nowrap;max-width:90%;text-align:center;text-wrap:balance`;
+    host.appendChild(n);
     n.animate(
       [
         {opacity:0,transform:'translate(-50%,-50%) scale(.5) translateY(10px)'},
@@ -1503,6 +1825,7 @@ const G={
       PLAYER.submit('survival', this.score, this.time).then(({isPersonalBest, isWorldRecord})=>{
         if(isWorldRecord){ this._isWorldRecordRun=true; this.celebrateWorldRecord(); }
         else if(isPersonalBest && this.score>0){ this.confetti(45); }
+        this.finalizeRunStats({worldRecord:isWorldRecord});
       });
     }
   },
@@ -1514,6 +1837,74 @@ const G={
     this.toast('🌍 KỶ LỤC THẾ GIỚI MỚI!','#ffd700');
     this.sfx('worldrecord');
     if(navigator.vibrate) navigator.vibrate([40,60,40,60,40,100]);
+  },
+
+  /* ─────────────────────────────────────────
+     finalizeRunStats() — called exactly once per
+     completed run (Classic/Survival exit, or a
+     full 45s Arena run). Folds this run's numbers
+     into lifetime totals, then checks every
+     achievement definition for new unlocks and
+     celebrates each with a staggered toast+confetti
+     so multiple simultaneous unlocks don't overlap.
+  ───────────────────────────────────────── */
+  async finalizeRunStats({arenaWin=false, worldRecord=false}={}){
+    await PLAYER.recordRunStats({
+      score: this.score,
+      combo: this.bestCombo,
+      survivalSeconds: this.mode==='survival' ? this.time : 0,
+      bossClicks: this.bossClicksThisRun||0,
+      goldenRushes: this.goldenRushesThisRun||0,
+      arenaWin, worldRecord
+    });
+    const newly = await PLAYER.checkAchievements({_runScore:this.score});
+    newly.forEach((a,i)=>setTimeout(()=>this.celebrateAchievement(a), 700+i*900));
+  },
+
+  celebrateAchievement(a){
+    this.toast(`${a.icon} ${a.name}!`, '#c9a5ff');
+    this.confetti(35);
+    this.sfx('achievement');
+  },
+
+  /* ─────────────────────────────────────────
+     renderAchievements() — locked/unlocked grid
+  ───────────────────────────────────────── */
+  async renderAchievements(){
+    await PLAYER.loadStats();
+    const unlocked = PLAYER.stats.unlocked||[];
+    _('achProgress').textContent = `${unlocked.length}/${ACHIEVEMENTS.length} mở khóa`;
+    _('achList').innerHTML = ACHIEVEMENTS.map(a=>{
+      const isUnlocked = unlocked.includes(a.id);
+      return `<div class="achRow ${isUnlocked?'unlocked':'locked'}">
+        <div class="achIco">${isUnlocked?a.icon:'🔒'}</div>
+        <div><div class="achName">${a.name}</div><div class="achDesc">${a.desc}</div></div>
+      </div>`;
+    }).join('');
+  },
+
+  /* ─────────────────────────────────────────
+     renderProfile() — lifetime stats + rank
+  ───────────────────────────────────────── */
+  async renderProfile(){
+    await PLAYER.loadStats();
+    const s=PLAYER.stats;
+    const cbest = await STORE.getP('pbest_classic', {score:0});
+    const sbest = await STORE.getP('pbest_survival', {score:0});
+    const top = Math.max(cbest.score, sbest.score);
+    const rank = getRank(top);
+    _('profRankIco').textContent = rank.icon;
+    _('profName').textContent = PLAYER.name || 'Ẩn danh';
+    _('profRankName').textContent = `Hạng ${rank.name}`;
+    _('profRankName').style.color = rank.color;
+    _('pTotalRuns').textContent = s.totalRuns||0;
+    _('pTotalScore').textContent = (s.totalScoreEver||0).toLocaleString('vi-VN');
+    _('pBestCombo').textContent = `×${s.bestComboEver||1}`;
+    _('pBestSurvival').textContent = `${s.bestSurvivalTime||0}s`;
+    _('pBossClicks').textContent = s.bossClicks||0;
+    _('pArenaWins').textContent = s.arenaWins||0;
+    _('profMemberSince').textContent = s.memberSince ? `Thành viên từ ${s.memberSince}` : '';
+    _('achCount').textContent = (s.unlocked||[]).length;
   },
 
   /* ─────────────────────────────────────────
@@ -1746,6 +2137,8 @@ const G={
         tone(700,.1,'sine',.16); setTimeout(()=>tone(980,.14,'sine',.14),70);
       }else if(type==='worldrecord'){
         [400,500,650,800,1000,1300].forEach((f,i)=>setTimeout(()=>tone(f,.18,'sine',.22),i*90));
+      }else if(type==='achievement'){
+        [500,650,820,1050].forEach((f,i)=>setTimeout(()=>tone(f,.14,'sine',.2),i*80));
       }
     }catch(e){}
   },
@@ -1794,6 +2187,7 @@ const G={
         PLAYER.submit(modeAtSubmit, scoreAtSubmit, timeAtSubmit).then(({isPersonalBest, isWorldRecord})=>{
           if(isWorldRecord){ this._isWorldRecordRun=true; this.celebrateWorldRecord(); }
           else if(isPersonalBest && scoreAtSubmit>0){ this.confetti(40); }
+          this.finalizeRunStats({worldRecord:isWorldRecord});
         });
       }
     }
@@ -1811,6 +2205,8 @@ const G={
      leaderboard polling, and the 45-second timed run.
   ═════════════════════════════════════════════════════ */
   async createRoom(){
+    const conn = await STORE.checkSharedConnection();
+    if(!conn.ok){ this.showPvpError(conn.reason); return; }
     const code = await ARENA.create();
     this.roomCode = code;
     ARENA.code = code;
@@ -1821,6 +2217,8 @@ const G={
   async joinRoom(){
     const raw = (_('roomCodeInput').value||'').trim().toUpperCase();
     if(raw.length<4){ this.toast('Nhập mã phòng hợp lệ','#ff8866'); return; }
+    const conn = await STORE.checkSharedConnection();
+    if(!conn.ok){ this.showPvpError(conn.reason); return; }
     const ok = await ARENA.exists(raw);
     if(!ok){ this.toast('❌ Không tìm thấy phòng','#ff5566'); return; }
     this.roomCode = raw;
@@ -1828,6 +2226,18 @@ const G={
     _('roomCodeInput').value='';
     this.view('room');
     await this.renderRoomLB();
+  },
+
+  /* Honest, specific error messages instead of a misleading
+     "room not found" when the real problem is connectivity. */
+  showPvpError(reason){
+    const msgs = {
+      missing_config: '⚠️ PvP chưa được cấu hình máy chủ (xem hướng dẫn Firebase)',
+      sdk_not_loaded: '⚠️ Không tải được thư viện kết nối — kiểm tra mạng, tải lại trang',
+      network: '⚠️ Không thể kết nối máy chủ PvP — kiểm tra Internet',
+      init_failed: '⚠️ Lỗi khởi tạo kết nối PvP',
+    };
+    this.toast(msgs[reason] || '⚠️ PvP hiện không khả dụng', '#ff5566');
   },
 
   leaveRoom(){
@@ -1876,6 +2286,7 @@ const G={
     this.mode='arena';
     this.score=0; this.combo=1; this.lct=0; this.bestCombo=0; this.cpa=0; this.level=1;
     this.scoreSaved=false; this.arenaTimeLeft=45; this._isWorldRecordRun=false;
+    this.bossClicksThisRun=0; this.goldenRushesThisRun=0;
     this.cActive=false; this.cClickable=false;
     clearTimeout(this.cTO); clearInterval(this.gTO); cancelAnimationFrame(this.cRAF);
 
@@ -1929,13 +2340,15 @@ const G={
     if(navigator.vibrate) navigator.vibrate([30,40,30,40,60]);
     if(rank===1) this.toast('🏆 ĐANG DẪN ĐẦU PHÒNG!','#ffd700');
     else if(rank>0) this.toast(`Hạng #${rank} trong phòng`,'#8ab4ff');
+
+    this.finalizeRunStats({arenaWin: rank===1});
   },
 
   /* ─────────────────────────────────────────
      view() — screen switcher
   ───────────────────────────────────────── */
   view(name){
-    const map={menu:'s0',modesel:'s6',play:'s1',pause:'s2',cfg:'s3',how:'s4',lb:'s5',gameover:'s7',share:'s8',nameentry:'s9',arenaLobby:'s10',room:'s11'};
+    const map={menu:'s0',modesel:'s6',play:'s1',pause:'s2',cfg:'s3',how:'s4',lb:'s5',gameover:'s7',share:'s8',nameentry:'s9',arenaLobby:'s10',room:'s11',achievements:'s12',profile:'s13'};
     if(name!=='room') clearInterval(this._roomPoll);
     document.querySelectorAll('.scr').forEach(el=>el.classList.add('hid'));
     const el=_(map[name]);
@@ -1943,6 +2356,8 @@ const G={
     this.s=name;
     if(name==='lb') this.renderLB(this.lbTab);
     if(name==='nameentry') setTimeout(()=>_('nameInput').focus(),120);
+    if(name==='achievements') this.renderAchievements();
+    if(name==='profile') this.renderProfile();
   },
 
   /* ─────────────────────────────────────────
@@ -2140,7 +2555,7 @@ _('arena').addEventListener('click', e=>{
 
 /* ── Boot — hide everything until identity resolves ── */
 document.querySelectorAll('.scr').forEach(el=>el.classList.add('hid'));
-PLAYER.init();
+PLAYER.init().then(()=>PRESENCE.start());
 </script>
 </body>
 </html>
