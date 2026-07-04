@@ -61,6 +61,11 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
 .roomMemPills{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:2px}
 .roomMemPill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:4px 12px;font-size:.74rem;font-weight:600;color:rgba(255,255,255,.85)}
 .roomMemPill.me{color:#8ab4ff;border-color:rgba(120,170,255,.45);background:rgba(120,170,255,.1)}
+.hostBadge{display:inline-block;margin-left:7px;padding:2px 9px;border-radius:10px;background:linear-gradient(135deg,#ffe066,#ff9d00);color:#3a2400;font-size:.6rem;font-weight:900;letter-spacing:.3px;box-shadow:0 0 10px rgba(255,190,0,.55),0 1px 2px rgba(0,0,0,.2);vertical-align:middle}
+.readyBadge{display:inline-block;margin-left:7px;padding:2px 9px;border-radius:10px;background:rgba(80,220,140,.16);color:#6ee7a8;font-size:.6rem;font-weight:700;border:1px solid rgba(80,220,140,.35);vertical-align:middle}
+.waitingBadge{display:inline-block;margin-left:7px;padding:2px 9px;border-radius:10px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);font-size:.6rem;font-weight:600;border:1px solid rgba(255,255,255,.12);vertical-align:middle}
+.durSelect{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:6px 8px;font-size:.85rem;font-weight:700;width:64px;text-align:center}
+.durLbl{font-size:.6rem;color:rgba(255,255,255,.4);margin-top:3px}
 .roomCodeInput{text-align:center;letter-spacing:6px;text-transform:uppercase;font-weight:800;font-size:1.1rem}
 
 /* ── STREAK / GLOBAL STAT BADGES ── */
@@ -497,6 +502,21 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
         <button class="db" style="font-size:.75rem;padding:7px 12px" onclick="G.copyRoomCode()">📋 Copy</button>
       </div>
     </div>
+
+    <div id="roomDurationDisplay"></div>
+    <div id="roomDurationSetting" style="display:none;margin-bottom:14px;padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)">
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:10px">
+        <button class="db act" id="durPresetBtn" onclick="G.selectDurationMode('preset')">Mặc định (45 giây)</button>
+        <button class="db" id="durCustomBtn" onclick="G.selectDurationMode('custom')">Tùy chỉnh</button>
+      </div>
+      <div id="durCustomPickers" style="display:none;align-items:flex-end;justify-content:center;gap:10px;margin-bottom:10px">
+        <div style="text-align:center"><select id="durH" class="durSelect"></select><div class="durLbl">Giờ</div></div>
+        <div style="text-align:center"><select id="durM" class="durSelect"></select><div class="durLbl">Phút</div></div>
+        <div style="text-align:center"><select id="durS" class="durSelect"></select><div class="durLbl">Giây</div></div>
+      </div>
+      <button class="pb2 prim" onclick="G.applyRoomDuration()">✔ Áp dụng</button>
+    </div>
+
     <div id="roomMembers"></div>
     <div id="roomLB" style="min-height:80px;max-height:220px;overflow-y:auto"></div>
 
@@ -505,10 +525,7 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
       <div id="roomSyncNum" style="font-size:2.2rem;font-weight:900;color:#c9a5ff;font-family:monospace">8</div>
     </div>
 
-    <div id="roomStartBtns">
-      <button class="pb2 prim" id="roomSyncBtn" onclick="G.requestSyncStart()">🚀 BẮT ĐẦU ĐỒNG BỘ (mọi người cùng lúc)</button>
-      <button class="pb2" onclick="G.startArenaRun()">▶ Chơi ngay một mình (45 giây)</button>
-    </div>
+    <div id="roomStartBtns"></div>
     <button class="pb2" onclick="G.leaveRoom()">← RỜI PHÒNG</button>
   </div>
 </div>
@@ -571,6 +588,22 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
 <script>
 const _=id=>document.getElementById(id);
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* Seeded PRNG (mulberry32) — deterministic sequence from a single
+   integer seed. Used exclusively by Arena/PvP mode: every player in
+   the same synced match starts their generator from the SAME shared
+   seed, so they see the exact same circle types, positions, and
+   event timing in the exact same order — true parity for PvP,
+   without needing a realtime server to broadcast every frame. */
+function mulberry32(seed){
+  let a = seed >>> 0;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 /* ════════════════════════════════════════════
    🔥 FIREBASE CONFIG — REQUIRED for PvP to sync
@@ -1124,7 +1157,7 @@ const ARENA = {
 
   async create(){
     const code=this.genCode();
-    await STORE.setS('arena_room:'+code, { host: PLAYER.name||'Ẩn danh', createdAt: Date.now() });
+    await STORE.setS('arena_room:'+code, { host: PLAYER.name||'Ẩn danh', hostId: PLAYER.id, createdAt: Date.now() });
     this.code=code;
     return code;
   },
@@ -1159,13 +1192,28 @@ const ARENA = {
      Registered once when entering a room (create/join),
      so players can see who's actually here BEFORE
      anyone starts playing, not just after someone
-     finishes a run and posts a score. */
+     finishes a run and posts a score. Members start
+     as NOT ready — they must explicitly confirm before
+     the host is allowed to launch a synced round. */
   async registerMember(code){
     if(!PLAYER.id || !code) return;
     const key='arena_members:'+code;
     const members = await STORE.getS(key, {});
-    members[PLAYER.id] = { name: PLAYER.name||'Ẩn danh', joinedAt: Date.now() };
+    members[PLAYER.id] = { name: PLAYER.name||'Ẩn danh', joinedAt: Date.now(), ready:false };
     await STORE.setS(key, members);
+  },
+
+  /* Called when a player explicitly presses "Rời Phòng" — removes
+     them from the member list entirely so their name doesn't linger
+     for others still in the room. */
+  async removeMember(code){
+    if(!PLAYER.id || !code) return;
+    const key='arena_members:'+code;
+    const members = await STORE.getS(key, {});
+    if(members[PLAYER.id]){
+      delete members[PLAYER.id];
+      await STORE.setS(key, members);
+    }
   },
 
   async getMembers(code){
@@ -1176,6 +1224,18 @@ const ARENA = {
       .sort((a,b)=>a.joinedAt-b.joinedAt);
   },
 
+  /* Non-host members confirm readiness here. The host never needs
+     to "ready up" themselves — they're the one who presses Start. */
+  async setReady(code, ready=true){
+    if(!PLAYER.id || !code) return;
+    const key='arena_members:'+code;
+    const members = await STORE.getS(key, {});
+    if(members[PLAYER.id]){
+      members[PLAYER.id].ready = ready;
+      await STORE.setS(key, members);
+    }
+  },
+
   /* ── Synchronized match start ──
      Any member can request a synced start: writes a
      shared "matchStartAt" timestamp (server-corrected,
@@ -1184,13 +1244,28 @@ const ARENA = {
      moment and independently fires startArenaRun() when
      their own serverNow() reaches it — so everyone's 45s
      window begins together without needing a realtime
-     socket connection, just a shared clock reference. */
+     socket connection, just a shared clock reference.
+
+     Host-only + all-ready gating happens one layer up in
+     G.requestSyncStart() (where the UI decision lives);
+     this method just does the actual write once permitted. */
   async requestSyncStart(code, bufferMs=8000){
     if(!code) return null;
     const startAt = STORE.serverNow() + bufferMs;
+    const matchSeed = Math.floor(Math.random()*2**31); // shared seed — NOT the seeded rng itself, just its origin
     const room = await STORE.getS('arena_room:'+code, {});
     room.matchStartAt = startAt;
+    room.matchSeed = matchSeed;
     await STORE.setS('arena_room:'+code, room);
+
+    /* Reset every member's ready flag — locks in THIS round, and
+       means the NEXT synced round (if any) needs fresh confirmation
+       from everyone rather than reusing a stale ready state. */
+    const members = await STORE.getS('arena_members:'+code, {});
+    let changed=false;
+    for(const id in members){ if(members[id].ready){ members[id].ready=false; changed=true; } }
+    if(changed) await STORE.setS('arena_members:'+code, members);
+
     return startAt;
   },
 
@@ -1292,7 +1367,8 @@ const G={
   ct:null,
 
   /* ── PvP Arena state ── */
-  roomCode:null, arenaTimeLeft:45, _roomPoll:null, _syncTick:null, _seasonTick:null,
+  roomCode:null, arenaTimeLeft:45, arenaDuration:45, _roomPoll:null, _syncTick:null, _seasonTick:null,
+  rng:null, roomIsHost:false,
 
   /* ── Cursor trail (cosmetic, never touches click hit-testing) ── */
   CUR:{x:0,y:0,tx:0,ty:0,k:.15,on:true,init:false},
@@ -1318,6 +1394,7 @@ const G={
   ───────────────────────────────────────── */
   go(mode){
     this.mode=mode||'classic';
+    this.rng=null; // Classic/Survival ALWAYS use plain Math.random() — never inherit a leftover PvP seed
     this.score=0; this.time=0; this.level=1; this.combo=1; this.lct=0; this.cpa=0;
     this.bestCombo=0; this.hearts=3; this.shielded=false; this.scoreSaved=false;
     this.bossClicksThisRun=0; this.goldenRushesThisRun=0;
@@ -1432,9 +1509,13 @@ const G={
       /* Fixed curve, identical for every player — decoupled from
          personal Easy/Med/Hard Settings so nobody can game the
          PvP ranking by lowering their own difficulty. Ramps up
-         over the 45s window to keep tension rising to the wire. */
-      const elapsed = 45 - Math.max(0,this.arenaTimeLeft);
-      return Math.max(650, 2400 - elapsed*38);
+         proportionally across whatever duration the room is set
+         to (default 45s, or a host-chosen custom length) so it
+         always reaches max difficulty right at the final second. */
+      const dur = this.arenaDuration||45;
+      const elapsed = dur - Math.max(0,this.arenaTimeLeft);
+      const frac = Math.min(1, elapsed/dur);
+      return Math.max(650, 2400 - frac*(2400-650));
     }
     const D=this.DIFS[this.dif];
     return Math.max(D.m, D.b-(this.level-1)*D.d);
@@ -1445,10 +1526,19 @@ const G={
      adapts to mode/hearts (heal circle only
      appears in Survival when hearts < 3)
   ───────────────────────────────────────── */
+  /* Random source for anything that must be IDENTICAL across every
+     player in a synced PvP match (circle type, position). Falls
+     back to plain Math.random() outside Arena mode or before the
+     seeded generator has been initialized — Classic/Survival never
+     touch this and are completely unaffected. */
+  rnd(){
+    return this.rng ? this.rng() : Math.random();
+  },
+
   spawnPickType(){
     const pool=this.TYPES.filter(t=> !t.heart || (this.mode==='survival' && this.hearts<3));
     const sum=pool.reduce((a,t)=>a+t.w,0);
-    let r=Math.random()*sum, cum=0;
+    let r=this.rnd()*sum, cum=0;
     for(const t of pool){ cum+=t.w; if(r<cum) return t; }
     return pool[0];
   },
@@ -1482,8 +1572,8 @@ const G={
 
     const aw=arena.clientWidth, ah=arena.clientHeight;
     const mg=t.sz/2+22;
-    const cx=mg+Math.random()*(aw-t.sz-mg*2);
-    const cy=mg+Math.random()*(ah-t.sz-mg*2);
+    const cx=mg+this.rnd()*(aw-t.sz-mg*2);
+    const cy=mg+this.rnd()*(ah-t.sz-mg*2);
 
     this.curCX=cx; this.curCY=cy;
     this.curCenterX=cx+t.sz/2; this.curCenterY=cy+t.sz/2;
@@ -2538,6 +2628,7 @@ const G={
   },
 
   leaveRoom(){
+    if(this.roomCode) ARENA.removeMember(this.roomCode); // fire-and-forget
     clearInterval(this._roomPoll);
     clearInterval(this._syncTick);
     this.roomCode=null;
@@ -2554,13 +2645,31 @@ const G={
       ARENA.getRoom(this.roomCode)
     ]);
 
-    /* ── Member pills — "who has joined" ── */
+    const isHost = room.hostId === PLAYER.id;
+    this.roomIsHost = isHost;
+    const roundDur = room.roundDuration || 45;
+    this._roomDuration = roundDur;
+    const others = members.filter(m=>m.id!==room.hostId);
+    const allReady = others.length===0 || others.every(m=>m.ready);
+
+    /* ── Duration display — host can tap to open the editor ── */
+    const durDisp=_('roomDurationDisplay');
+    durDisp.style.cssText = `text-align:center;font-size:.72rem;color:rgba(255,255,255,.5);margin-bottom:12px;${isHost?'cursor:pointer':''}`;
+    durDisp.textContent = `⏱️ Thời gian mỗi trận: ${this.formatDuration(roundDur)}` + (isHost ? '  (chạm để đổi)' : '');
+    durDisp.onclick = isHost ? (()=>this.toggleDurationSetting()) : null;
+
+    /* ── Member pills — host gets a gold badge, members show ready state ── */
     const mc=_('roomMembers');
     if(members.length){
       mc.innerHTML = `<div class="roomMemLabel">ĐÃ VÀO PHÒNG (${members.length})</div>
-        <div class="roomMemPills">${members.map(m=>
-          `<span class="roomMemPill${m.isMe?' me':''}">${m.isMe?'👤 ':''}${esc(m.name)}${m.isMe?' (Bạn)':''}</span>`
-        ).join('')}</div>`;
+        <div class="roomMemPills">${members.map(m=>{
+          const isThisHost = m.id===room.hostId;
+          let badge='';
+          if(isThisHost) badge='<span class="hostBadge">👑 CHỦ PHÒNG</span>';
+          else if(m.ready) badge='<span class="readyBadge">✅ Sẵn sàng</span>';
+          else badge='<span class="waitingBadge">⏳ Chưa sẵn sàng</span>';
+          return `<span class="roomMemPill${m.isMe?' me':''}">${m.isMe?'👤 ':''}${esc(m.name)}${m.isMe?' (Bạn)':''}${badge}</span>`;
+        }).join('')}</div>`;
     }else{
       mc.innerHTML='';
     }
@@ -2581,7 +2690,26 @@ const G={
         </div>`).join('');
     }
 
-    this.handleSyncCountdown(room.matchStartAt);
+    /* ── Dynamic start area: host sees a gated Start button;
+       non-host members see a Ready button or a waiting message ── */
+    const startEl=_('roomStartBtns');
+    const soloLabel = `▶ Chơi ngay một mình (${this.formatDuration(roundDur)})`;
+    if(isHost){
+      startEl.innerHTML = allReady
+        ? `<button class="pb2 prim" onclick="G.requestSyncStart()">🚀 BẮT ĐẦU ĐỒNG BỘ (mọi người cùng lúc)</button>
+           <button class="pb2" onclick="G.startArenaRun()">${soloLabel}</button>`
+        : `<button class="pb2 prim" disabled style="opacity:.4;cursor:not-allowed">🚀 Đang chờ thành viên sẵn sàng...</button>
+           <button class="pb2" onclick="G.startArenaRun()">${soloLabel}</button>`;
+    }else{
+      const me = members.find(m=>m.isMe);
+      startEl.innerHTML = (me && me.ready)
+        ? `<div style="text-align:center;padding:12px;border-radius:12px;background:rgba(80,220,140,.1);border:1px solid rgba(80,220,140,.3);color:#6ee7a8;font-weight:700;font-size:.85rem;margin-bottom:10px">✅ Đã sẵn sàng — chờ chủ phòng bắt đầu...</div>
+           <button class="pb2" onclick="G.startArenaRun()">${soloLabel}</button>`
+        : `<button class="pb2 prim" onclick="G.toggleReady()">✅ SẴN SÀNG</button>
+           <button class="pb2" onclick="G.startArenaRun()">${soloLabel}</button>`;
+    }
+
+    this.handleSyncCountdown(room);
 
     /* Poll for opponents' scores/members while the room screen is open —
        gives a "live" feel without needing a realtime backend. */
@@ -2600,14 +2728,93 @@ const G={
   ───────────────────────────────────────── */
   async requestSyncStart(){
     if(!this.roomCode) return;
+    const room = await ARENA.getRoom(this.roomCode);
+    if(room.hostId !== PLAYER.id){
+      this.toast('⚠️ Chỉ chủ phòng mới được bắt đầu','#ff8866');
+      return;
+    }
+    const members = await ARENA.getMembers(this.roomCode);
+    const others = members.filter(m=>m.id!==room.hostId);
+    const allReady = others.length===0 || others.every(m=>m.ready);
+    if(!allReady){
+      this.toast('⏳ Đang chờ mọi thành viên sẵn sàng','#ff8866');
+      return;
+    }
     await ARENA.requestSyncStart(this.roomCode, 8000);
+    await this.renderRoomLB();
+  },
+
+  /* Non-host members confirm readiness here. Once pressed, it can't
+     be un-pressed — matches a standard "ready check" pattern. */
+  async toggleReady(){
+    if(!this.roomCode) return;
+    await ARENA.setReady(this.roomCode, true);
+    this.toast('✅ Đã sẵn sàng!','#6ee7a8');
+    await this.renderRoomLB();
+  },
+
+  /* Renders "1 phút 10 giây" / "45 giây" / "1 giờ 5 phút" style text. */
+  formatDuration(sec){
+    sec = Math.max(0, Math.floor(sec));
+    const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+    const parts=[];
+    if(h) parts.push(`${h} giờ`);
+    if(m) parts.push(`${m} phút`);
+    if(s || parts.length===0) parts.push(`${s} giây`);
+    return parts.join(' ');
+  },
+
+  /* Host-only editor toggle for the room's match duration. */
+  toggleDurationSetting(){
+    if(!this.roomIsHost) return;
+    const el=_('roomDurationSetting');
+    const opening = el.style.display==='none';
+    if(opening) this.populateDurationSelects();
+    el.style.display = opening ? 'block' : 'none';
+  },
+
+  populateDurationSelects(){
+    ['durH','durM','durS'].forEach(id=>{
+      const sel=_(id);
+      if(sel.options.length) return; // already populated once
+      for(let i=0;i<=60;i++){
+        const o=document.createElement('option');
+        o.value=i; o.textContent=i;
+        sel.appendChild(o);
+      }
+    });
+  },
+
+  selectDurationMode(mode){
+    _('durPresetBtn').classList.toggle('act', mode==='preset');
+    _('durCustomBtn').classList.toggle('act', mode==='custom');
+    _('durCustomPickers').style.display = mode==='custom' ? 'flex' : 'none';
+    this._pendingDurationMode = mode;
+  },
+
+  async applyRoomDuration(){
+    if(!this.roomCode || !this.roomIsHost) return;
+    let seconds;
+    if(this._pendingDurationMode==='custom'){
+      const h=parseInt(_('durH').value)||0, m=parseInt(_('durM').value)||0, s=parseInt(_('durS').value)||0;
+      seconds = h*3600 + m*60 + s;
+      if(seconds<=0){ this.toast('⚠️ Thời gian phải lớn hơn 0','#ff8866'); return; }
+    }else{
+      seconds = 45;
+    }
+    const room = await ARENA.getRoom(this.roomCode);
+    room.roundDuration = seconds;
+    await STORE.setS('arena_room:'+this.roomCode, room);
+    this.toast(`⏱️ Đã đặt: ${this.formatDuration(seconds)}`, '#8ab4ff');
+    _('roomDurationSetting').style.display='none';
     await this.renderRoomLB();
   },
 
   /* Shows/hides the countdown UI and fires startArenaRun() for THIS
      device once the shared target moment arrives. Safe to call
      repeatedly (e.g. every poll) — it just re-syncs the display. */
-  handleSyncCountdown(matchStartAt){
+  handleSyncCountdown(room){
+    const matchStartAt = room.matchStartAt;
     clearInterval(this._syncTick);
     const box=_('roomSyncCountdown'), btns=_('roomStartBtns');
     const now = STORE.serverNow();
@@ -2626,7 +2833,7 @@ const G={
       if(remain<=0){
         clearInterval(this._syncTick);
         _('roomSyncNum').textContent='0';
-        this.startArenaRun();
+        this.startArenaRun(room.matchSeed, room.roundDuration);
         return;
       }
       _('roomSyncNum').textContent=remain;
@@ -2644,12 +2851,23 @@ const G={
     }
   },
 
-  startArenaRun(){
+  startArenaRun(matchSeed, roundDuration){
     clearInterval(this._roomPoll);
     clearInterval(this._syncTick);
     this.mode='arena';
+
+    /* Shared seed (synced match) or a private one (solo practice) —
+       either way Arena mode always runs on the seeded generator so
+       the code path is identical; only WHERE the seed came from differs. */
+    const seed = (matchSeed!=null) ? matchSeed : Math.floor(Math.random()*2**31);
+    this.rng = mulberry32(seed);
+
+    const dur = roundDuration || this._roomDuration || 45;
+    this.arenaDuration = dur;
+    this.arenaTimeLeft = dur;
+
     this.score=0; this.combo=1; this.lct=0; this.bestCombo=0; this.cpa=0; this.level=1;
-    this.scoreSaved=false; this.arenaTimeLeft=45; this._isWorldRecordRun=false;
+    this.scoreSaved=false; this._isWorldRecordRun=false;
     this.bossClicksThisRun=0; this.goldenRushesThisRun=0;
     this.cActive=false; this.cClickable=false;
     clearTimeout(this.cTO); clearInterval(this.gTO); cancelAnimationFrame(this.cRAF);
@@ -2702,10 +2920,44 @@ const G={
     const entries = await ARENA.getLB(this.roomCode);
     const rank = entries.findIndex(e=>e.isMe)+1;
     if(navigator.vibrate) navigator.vibrate([30,40,30,40,60]);
-    if(rank===1) this.toast('🏆 ĐANG DẪN ĐẦU PHÒNG!','#ffd700');
-    else if(rank>0) this.toast(`Hạng #${rank} trong phòng`,'#8ab4ff');
+
+    /* Big, unmissable winner announcement — everyone who was in this
+       match sees it once their own timer ends (all timers end at
+       ~the same real moment thanks to the synced start), so it reads
+       as a shared result rather than a private notification. */
+    if(entries.length){
+      this.showArenaWinner(entries[0].name, entries[0].isMe);
+      if(rank>1) setTimeout(()=>this.toast(`Hạng #${rank} trong phòng`,'#8ab4ff'), 1400);
+    }
 
     this.finalizeRunStats({arenaWin: rank===1});
+  },
+
+  /* ─────────────────────────────────────────
+     showArenaWinner() — the big "so-and-so WON"
+     banner shown to every player in the room
+     once the synced match's timer runs out.
+  ───────────────────────────────────────── */
+  showArenaWinner(winnerName, isMe){
+    const host=_('W');
+    const n=document.createElement('div');
+    n.innerHTML = isMe
+      ? `🏆<br>BẠN ĐÃ THẮNG!`
+      : `🏆<br>${esc(winnerName)}<br>ĐÃ THẮNG!`;
+    n.style.cssText=`position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;font-size:2rem;font-weight:900;color:#ffd700;text-shadow:0 0 30px rgba(255,210,0,.85),0 4px 14px rgba(0,0,0,.9);z-index:95;pointer-events:none;white-space:nowrap;line-height:1.35;max-width:90%`;
+    host.appendChild(n);
+    n.animate(
+      [
+        {opacity:0,transform:'translate(-50%,-50%) scale(.4) rotate(-8deg)'},
+        {opacity:1,transform:'translate(-50%,-50%) scale(1.15) rotate(2deg)',offset:.35},
+        {opacity:1,transform:'translate(-50%,-50%) scale(1) rotate(0deg)',offset:.7},
+        {opacity:0,transform:'translate(-50%,-50%) scale(1) rotate(0deg)'}
+      ],
+      {duration:2800,easing:'ease'}
+    );
+    setTimeout(()=>n.remove(),2850);
+    this.confetti(isMe?100:60);
+    this.sfx('worldrecord');
   },
 
   /* ─────────────────────────────────────────
