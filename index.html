@@ -2,16 +2,30 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Circle Rush</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#07071a;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;font-family:'Segoe UI',system-ui,sans-serif;overflow-y:auto;padding:16px 0}
+body{background:#07071a;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;min-height:100dvh;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;overscroll-behavior:none;padding:8px;box-sizing:border-box;touch-action:manipulation}
 .sr-only{position:absolute;width:1px;height:1px;clip:rect(0,0,0,0);overflow:hidden}
 button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
 
 /* ── WRAPPER ── */
-#W{position:relative;width:min(680px,96vw);aspect-ratio:1/1;max-height:92vh;background:#07071a;overflow:hidden;border-radius:16px;color:#fff;user-select:none;box-shadow:0 0 60px rgba(80,120,255,.18)}
+#W{position:relative;width:min(680px,100%);aspect-ratio:1/1;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);background:#07071a;overflow:hidden;border-radius:16px;color:#fff;user-select:none;box-shadow:0 0 60px rgba(80,120,255,.18);touch-action:manipulation}
+
+/* Mobile: drop the square-card look, fill the real screen edge-to-edge
+   so there's no wasted border and nothing left over to accidentally
+   drag/scroll while tapping mid-game. */
+@media (max-width:700px){
+  body{padding:0}
+  #W{width:100vw;height:100vh;max-width:100vw;max-height:100vh;width:100dvw;height:100dvh;max-width:100dvw;max-height:100dvh;aspect-ratio:auto;border-radius:0;box-shadow:none}
+}
+
+/* Fullscreen API — fills whichever screen shape it's given, no crop */
+#W:fullscreen,#W:-webkit-full-screen{width:100vw!important;height:100vh!important;max-width:100vw!important;max-height:100vh!important;aspect-ratio:auto!important;border-radius:0!important;box-shadow:none!important}
+
+#fsBtn{position:absolute;top:12px;left:12px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font-size:1rem;cursor:pointer;z-index:65;display:flex;align-items:center;justify-content:center;transition:all .2s}
+#fsBtn:hover{background:rgba(255,255,255,.18)}
 #BG{position:absolute;inset:0;width:100%;height:100%}
 
 /* ── SCREENS ── */
@@ -42,11 +56,17 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
 
 /* ── ARENA (PVP) ── */
 #roomCodeDisplay{font-size:2rem;font-weight:900;letter-spacing:8px;color:#8ab4ff;text-shadow:0 0 20px rgba(120,170,255,.5);font-family:monospace}
+#roomMembers{margin-bottom:14px}
+.roomMemLabel{font-size:.62rem;color:rgba(255,255,255,.4);letter-spacing:1px;margin-bottom:7px;text-align:center}
+.roomMemPills{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:2px}
+.roomMemPill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:4px 12px;font-size:.74rem;font-weight:600;color:rgba(255,255,255,.85)}
+.roomMemPill.me{color:#8ab4ff;border-color:rgba(120,170,255,.45);background:rgba(120,170,255,.1)}
 .roomCodeInput{text-align:center;letter-spacing:6px;text-transform:uppercase;font-weight:800;font-size:1.1rem}
 
 /* ── STREAK / GLOBAL STAT BADGES ── */
 #streakBadge{font-size:.72rem;color:#ffb347;background:rgba(255,150,50,.1);border:1px solid rgba(255,150,50,.22);border-radius:16px;padding:3px 13px;margin-bottom:8px;display:inline-block}
 #globalStat{font-size:.68rem;color:rgba(160,190,255,.5);margin-bottom:4px}
+#seasonBanner{margin-bottom:16px;padding:12px;border-radius:14px;background:rgba(255,180,40,.08);border:1px solid rgba(255,180,40,.22)}
 #onlineNow{font-size:.68rem;color:#5eead4;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:5px}
 #onlineDot{width:7px;height:7px;border-radius:50%;background:#22e0a0;box-shadow:0 0 8px rgba(34,224,160,.9);display:inline-block;animation:dotPulse 1.8s ease-in-out infinite}
 @keyframes dotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.75)}}
@@ -63,6 +83,12 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
 .achName{font-weight:700;font-size:.85rem;color:#fff}
 .achRow.locked .achName{color:rgba(255,255,255,.35)}
 .achDesc{font-size:.68rem;color:rgba(255,255,255,.4);margin-top:2px}
+.achProgBar{height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:7px;overflow:hidden}
+.achProgFill{height:100%;background:linear-gradient(90deg,#8ab4ff,#c9a5ff);border-radius:3px;transition:width .3s ease}
+.achProgText{font-size:.6rem;color:rgba(255,255,255,.35);margin-top:3px;text-align:right;font-family:monospace}
+.achBarWrap{width:100%;height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:7px;overflow:hidden}
+.achBar{height:100%;background:linear-gradient(90deg,#6af,#b6f);border-radius:3px;transition:width .3s ease}
+.achProgTxt{font-size:.62rem;color:rgba(255,255,255,.4);margin-top:4px;font-family:monospace}
 
 /* ── PROFILE STATS ── */
 .statBox{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 13px}
@@ -212,6 +238,7 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
 <div id="cursorGlow"></div>
 <div id="cursorDot"></div>
 <canvas id="confettiCanvas"></canvas>
+<button id="fsBtn" onclick="G.toggleFullscreen()" title="Toàn màn hình">⛶</button>
 
 <!-- ════ MENU ════ -->
 <div class="scr" id="s0">
@@ -287,6 +314,7 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
     <div class="ptt">⏸ PAUSED</div>
     <div style="font-size:.85rem;color:rgba(255,255,255,.42);margin-bottom:18px">Hít thở đi — điểm vẫn còn đó!</div>
     <button class="pb2 prim" onclick="G.resume()">▶&nbsp; RESUME</button>
+    <button class="pb2" onclick="G.toggleFullscreen()">⛶&nbsp; TOÀN MÀN HÌNH</button>
     <button class="pb2" onclick="G.openShareCard()">📸&nbsp; CHIA SẺ ĐIỂM</button>
     <button class="pb2" id="pauseMenuBtn" onclick="G.menu()">⌂&nbsp; MAIN MENU</button>
   </div>
@@ -411,6 +439,11 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
   <button class="closeX" onclick="G.view('menu')">✕</button>
   <div class="pnl" style="width:380px">
     <div class="ptt" style="margin-bottom:14px">⊞ BẢNG XẾP HẠNG</div>
+    <div id="seasonBanner">
+      <div style="text-align:center;font-size:.66rem;color:#ffb84d;font-weight:700;letter-spacing:1px;margin-bottom:4px">⏱️ MÙA GIẢI KẾT THÚC SAU</div>
+      <div id="seasonCountdown" style="text-align:center;font-size:1.35rem;font-weight:900;color:#ffd700;font-family:monospace;margin-bottom:6px">--:--:--</div>
+      <div id="seasonMyRank" style="text-align:center;font-size:.74rem;color:rgba(255,255,255,.6)"></div>
+    </div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
       <button class="lbTab act" id="tabClassic" onclick="G.switchLBTab('classic')">♾️ Vô Tận</button>
       <button class="lbTab" id="tabSurvival" onclick="G.switchLBTab('survival')">❤️ Sinh Tồn</button>
@@ -420,6 +453,17 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
       Xếp theo điểm cao nhất · thời gian lâu nhất là tiebreaker
     </div>
     <button class="pb2 prim" style="margin-top:12px" onclick="G.view('menu')">← QUAY LẠI</button>
+  </div>
+</div>
+
+<!-- ════ SEASON REVEAL ════ -->
+<div class="scr hid ov" id="s16">
+  <div class="pnl" style="text-align:center">
+    <div id="seasonRevealIco" style="font-size:3rem;margin-bottom:8px">🏆</div>
+    <div class="ptt" style="margin-bottom:4px">KẾT QUẢ MÙA GIẢI TRƯỚC</div>
+    <div style="font-size:.74rem;color:rgba(255,255,255,.4);margin-bottom:16px">Mùa giải 24 giờ vừa kết thúc — đây là hạng cuối cùng của bạn</div>
+    <div id="seasonRevealBody"></div>
+    <button class="pb2 prim" style="margin-top:18px" onclick="G.dismissSeasonReveal()">TUYỆT VỜI! →</button>
   </div>
 </div>
 
@@ -446,15 +490,25 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
   <button class="closeX" onclick="G.leaveRoom()">✕</button>
   <div class="pnl" style="width:380px">
     <div class="ptt" style="margin-bottom:14px">⚔️ PHÒNG ĐẤU</div>
-    <div style="text-align:center;margin-bottom:16px">
+    <div style="text-align:center;margin-bottom:14px">
       <div style="font-size:.64rem;color:rgba(255,255,255,.4);letter-spacing:1px;margin-bottom:6px">MÃ PHÒNG — CHIA SẺ CHO BẠN BÈ</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:10px">
         <div id="roomCodeDisplay">-----</div>
         <button class="db" style="font-size:.75rem;padding:7px 12px" onclick="G.copyRoomCode()">📋 Copy</button>
       </div>
     </div>
-    <div id="roomLB" style="min-height:100px;max-height:250px;overflow-y:auto"></div>
-    <button class="pb2 prim" style="margin-top:14px" onclick="G.startArenaRun()">▶ VÀO TRẬN (45 GIÂY)</button>
+    <div id="roomMembers"></div>
+    <div id="roomLB" style="min-height:80px;max-height:220px;overflow-y:auto"></div>
+
+    <div id="roomSyncCountdown" style="display:none;text-align:center;margin-top:16px;padding:14px;border-radius:14px;background:linear-gradient(135deg,rgba(120,80,255,.16),rgba(255,80,180,.12));border:1px solid rgba(160,130,255,.35)">
+      <div style="font-size:.68rem;color:rgba(255,255,255,.5);letter-spacing:1px;margin-bottom:4px">TRẬN ĐẤU BẮT ĐẦU SAU</div>
+      <div id="roomSyncNum" style="font-size:2.2rem;font-weight:900;color:#c9a5ff;font-family:monospace">8</div>
+    </div>
+
+    <div id="roomStartBtns">
+      <button class="pb2 prim" id="roomSyncBtn" onclick="G.requestSyncStart()">🚀 BẮT ĐẦU ĐỒNG BỘ (mọi người cùng lúc)</button>
+      <button class="pb2" onclick="G.startArenaRun()">▶ Chơi ngay một mình (45 giây)</button>
+    </div>
     <button class="pb2" onclick="G.leaveRoom()">← RỜI PHÒNG</button>
   </div>
 </div>
@@ -488,6 +542,12 @@ button,.mb,.pb2,.db,.tog,.modeCard,#C{touch-action:manipulation}
     <button class="pb2 prim" onclick="G.view('achievements')">🏅 XEM THÀNH TỰU (<span id="achCount">0</span>/12)</button>
     <button class="pb2" onclick="G.view('menu')">← QUAY LẠI</button>
   </div>
+</div>
+
+<!-- ════ PLAYER DETAIL (tap any name on a leaderboard) ════ -->
+<div class="scr hid ov" id="s15">
+  <button class="closeX" onclick="G.closePlayerDetail()">✕</button>
+  <div class="pnl" style="width:390px;text-align:center" id="playerDetailPnl"></div>
 </div>
 
 <!-- ════ NAME ENTRY ════ -->
@@ -566,6 +626,7 @@ const FIREBASE_CONFIG = {
 ════════════════════════════════════════════ */
 const STORE = (() => {
   let fbDB=null, fbReady=false, fbError=null, fbInitTried=false;
+  let serverOffset=0; // serverTime - Date.now(), corrects for each device's clock skew
 
   function ensureFirebase(){
     if (fbInitTried) return;
@@ -582,6 +643,11 @@ const STORE = (() => {
       firebase.initializeApp(FIREBASE_CONFIG);
       fbDB = firebase.database();
       fbReady = true;
+      /* Keep a running correction for THIS device's clock drift vs the
+         Firebase server clock — critical for synchronized match starts
+         and the 24h season boundary to land at the same real moment
+         for every player, regardless of whose phone clock is wrong. */
+      try{ fbDB.ref('.info/serverTimeOffset').on('value', snap=>{ serverOffset = snap.val()||0; }); }catch(e){}
     } catch(e) {
       fbError = 'init_failed';
       console.error('[Circle Rush] Firebase init failed:', e);
@@ -643,6 +709,14 @@ const STORE = (() => {
       } catch(e) {
         return {ok:false, reason:'network'};
       }
+    },
+
+    /* "Now", corrected for this device's clock drift relative to the
+       Firebase server. Falls back to plain Date.now() (offset 0) if
+       Firebase isn't connected yet — still usable, just not skew-
+       corrected until the listener above reports in. */
+    serverNow(){
+      return Date.now() + serverOffset;
     }
   };
 })();
@@ -684,25 +758,71 @@ function getRank(score){
 }
 
 /* ════════════════════════════════════════════
-   ACHIEVEMENTS — checked against a context that
-   merges lifetime stats with the just-finished
-   run's numbers (score/combo of THIS run only,
-   prefixed with an underscore to distinguish
-   from the lifetime totals of the same name).
+   SEASONS — a new 24h leaderboard "season" every
+   day, globally in sync for every player with zero
+   extra storage: the season id is just a pure
+   function of the current server time (days since
+   epoch), so it changes at the same instant for
+   everyone and keeps counting even while the app
+   is closed — there's no per-session timer to pause.
+
+   When a season's 24h window passes, nobody writes
+   to that season's leaderboard key anymore (everyone
+   has moved on to the next id), so its final state
+   is naturally frozen exactly as it stood at the
+   boundary — no explicit "close" step needed.
+════════════════════════════════════════════ */
+function getCurrentSeasonId(){
+  return Math.floor(STORE.serverNow() / 86400000);
+}
+function getSeasonBoundary(seasonId){
+  return (seasonId + 1) * 86400000;
+}
+
+/* ════════════════════════════════════════════
+   ACHIEVEMENTS — each entry's `check` decides
+   unlock; `progress` (optional) returns {cur,target}
+   so the Achievements screen can show a live
+   "X/Y" bar for locked ones — e.g. "12/20 ván".
+   Achievements with no natural numeric progress
+   (like the very first score) simply omit it.
 ════════════════════════════════════════════ */
 const ACHIEVEMENTS = [
-  {id:'first_score',    icon:'🎯', name:'Cú Click Đầu Tiên',   desc:'Ghi điểm lần đầu tiên',                check:s=>s.totalRuns>=1},
-  {id:'century',        icon:'💯', name:'Trăm Điểm',           desc:'Đạt 100 điểm trong 1 ván',             check:s=>(s._runScore||0)>=100},
-  {id:'kilo',           icon:'🚀', name:'Nghìn Điểm',          desc:'Đạt 1000 điểm trong 1 ván',            check:s=>(s._runScore||0)>=1000},
-  {id:'combo_master',   icon:'⚡', name:'Bậc Thầy Combo',      desc:'Đạt combo ×8',                          check:s=>s.bestComboEver>=8},
-  {id:'boss_hunter',    icon:'👑', name:'Thợ Săn Boss',        desc:'Hạ gục 10 vòng tròn BOSS',              check:s=>s.bossClicks>=10},
-  {id:'survivor_60',    icon:'⏱️', name:'Sống Sót 60 Giây',    desc:'Trụ vững 60s trong Sinh Tồn',           check:s=>s.bestSurvivalTime>=60},
-  {id:'survivor_120',   icon:'🛡️', name:'Chiến Binh Bất Tử',  desc:'Trụ vững 120s trong Sinh Tồn',          check:s=>s.bestSurvivalTime>=120},
-  {id:'arena_champ',    icon:'⚔️', name:'Vua Đấu Trường',      desc:'Thắng hạng #1 trong 1 phòng PvP',       check:s=>s.arenaWins>=1},
-  {id:'record_breaker', icon:'🌍', name:'Kỷ Lục Gia',          desc:'Lập kỷ lục thế giới',                   check:s=>s.worldRecords>=1},
-  {id:'golden_touch',   icon:'✨', name:'Golden Touch',        desc:'Trải nghiệm 5 lần Golden Rush',         check:s=>s.goldenRushesSeen>=5},
-  {id:'dedicated',      icon:'🔥', name:'Kiên Trì',            desc:'Chơi 20 ván',                           check:s=>s.totalRuns>=20},
-  {id:'legend',         icon:'🏆', name:'Huyền Thoại',         desc:'Tổng 5000 điểm trọn đời',               check:s=>s.totalScoreEver>=5000},
+  {id:'first_score',    icon:'🎯', name:'Cú Click Đầu Tiên',   desc:'Ghi điểm lần đầu tiên',
+    check:s=>s.totalRuns>=1},
+  {id:'century',        icon:'💯', name:'Trăm Điểm',           desc:'Đạt 100 điểm trong 1 ván',
+    check:s=>(s.bestRunScore||0)>=100,
+    progress:s=>({cur:Math.min(s.bestRunScore||0,100), target:100})},
+  {id:'kilo',           icon:'🚀', name:'Nghìn Điểm',          desc:'Đạt 1000 điểm trong 1 ván',
+    check:s=>(s.bestRunScore||0)>=1000,
+    progress:s=>({cur:Math.min(s.bestRunScore||0,1000), target:1000})},
+  {id:'combo_master',   icon:'⚡', name:'Bậc Thầy Combo',      desc:'Đạt combo ×8',
+    check:s=>s.bestComboEver>=8,
+    progress:s=>({cur:Math.min(s.bestComboEver||0,8), target:8})},
+  {id:'boss_hunter',    icon:'👑', name:'Thợ Săn Boss',        desc:'Hạ gục 10 vòng tròn BOSS',
+    check:s=>s.bossClicks>=10,
+    progress:s=>({cur:Math.min(s.bossClicks||0,10), target:10})},
+  {id:'survivor_60',    icon:'⏱️', name:'Sống Sót 60 Giây',    desc:'Trụ vững 60s trong Sinh Tồn',
+    check:s=>s.bestSurvivalTime>=60,
+    progress:s=>({cur:Math.min(s.bestSurvivalTime||0,60), target:60})},
+  {id:'survivor_120',   icon:'🛡️', name:'Chiến Binh Bất Tử',  desc:'Trụ vững 120s trong Sinh Tồn',
+    check:s=>s.bestSurvivalTime>=120,
+    progress:s=>({cur:Math.min(s.bestSurvivalTime||0,120), target:120})},
+  {id:'arena_champ',    icon:'⚔️', name:'Vua Đấu Trường',      desc:'Thắng hạng #1 trong 1 phòng PvP',
+    check:s=>s.arenaWins>=1,
+    progress:s=>({cur:Math.min(s.arenaWins||0,1), target:1})},
+  {id:'record_breaker', icon:'🌍', name:'Kỷ Lục Gia',          desc:'Lập kỷ lục thế giới',
+    check:s=>s.worldRecords>=1,
+    progress:s=>({cur:Math.min(s.worldRecords||0,1), target:1})},
+  {id:'golden_touch',   icon:'✨', name:'Golden Touch',        desc:'Trải nghiệm 5 lần Golden Rush',
+    check:s=>s.goldenRushesSeen>=5,
+    progress:s=>({cur:Math.min(s.goldenRushesSeen||0,5), target:5})},
+  {id:'dedicated',      icon:'🔥', name:'Kiên Trì',            desc:'Chơi 20 ván',
+    check:s=>s.totalRuns>=20,
+    progress:s=>({cur:Math.min(s.totalRuns||0,20), target:20})},
+  {id:'legend',         icon:'🏆', name:'Huyền Thoại',         desc:'Tổng 5000 điểm trọn đời',
+    check:s=>s.totalScoreEver>=5000,
+    progress:s=>({cur:Math.min(s.totalScoreEver||0,5000), target:5000})},
 ];
 
 const PLAYER = {
@@ -753,9 +873,14 @@ const PLAYER = {
     }
 
     loadGlobalStat();
+    if (this.name) this.publishProfile();
 
-    if (!this.name) G.view('nameentry');
-    else G.view('menu');
+    if (!this.name) {
+      G.view('nameentry');
+    } else {
+      const revealed = await G.checkSeasonReveal();
+      if (!revealed) G.view('menu');
+    }
   },
 
   async setName(name) {
@@ -769,6 +894,7 @@ const PLAYER = {
       const lb = await STORE.getS('lb_'+mode, {});
       if (lb[this.id]) { lb[this.id].name = name; await STORE.setS('lb_'+mode, lb); }
     }
+    this.publishProfile();
   },
 
   /* Submit score.  Only updates this player's entry if the new result
@@ -813,6 +939,20 @@ const PLAYER = {
       await STORE.setS('lb_'+mode, lb);
     }
 
+    /* Also submit into the CURRENT season's leaderboard — a fully
+       separate key from the all-time board above, so this never
+       touches or reorders the existing all-time rankings. Same
+       one-row-per-player, best-score-wins rule applies. */
+    try{
+      const seasonKey = `lb_${mode}_s${getCurrentSeasonId()}`;
+      const slb = await STORE.getS(seasonKey, {});
+      const sExisting = slb[this.id];
+      if(!sExisting || score>sExisting.score || (score===sExisting.score && time>sExisting.time)){
+        slb[this.id] = { name: this.name||'Ẩn danh', score, time };
+        await STORE.setS(seasonKey, slb);
+      }
+    }catch(e){}
+
     return {isPersonalBest, isWorldRecord};
   },
 
@@ -821,7 +961,15 @@ const PLAYER = {
   async getLB(mode) {
     const lb = await STORE.getS('lb_'+mode, {});
     return Object.entries(lb)
-      .map(([id, e]) => ({ ...e, isMe: id === this.id }))
+      .map(([id, e]) => ({ ...e, id, isMe: id === this.id }))
+      .sort((a, b) => b.score - a.score || b.time - a.time);
+  },
+
+  /* Same shape as getLB() but scoped to one 24h season. */
+  async getSeasonLB(mode, seasonId) {
+    const lb = await STORE.getS(`lb_${mode}_s${seasonId}`, {});
+    return Object.entries(lb)
+      .map(([id, e]) => ({ ...e, id, isMe: id === this.id }))
       .sort((a, b) => b.score - a.score || b.time - a.time);
   },
 
@@ -836,7 +984,7 @@ const PLAYER = {
 
   defaultStats(){
     return {
-      totalRuns:0, totalScoreEver:0, bestComboEver:0, bestSurvivalTime:0,
+      totalRuns:0, totalScoreEver:0, bestRunScore:0, bestComboEver:0, bestSurvivalTime:0,
       bossClicks:0, goldenRushesSeen:0, arenaWins:0, worldRecords:0,
       unlocked:[], memberSince: new Date().toISOString().slice(0,10)
     };
@@ -854,6 +1002,7 @@ const PLAYER = {
     const s=this.stats;
     s.totalRuns=(s.totalRuns||0)+1;
     s.totalScoreEver=(s.totalScoreEver||0)+score;
+    s.bestRunScore=Math.max(s.bestRunScore||0, score);
     s.bestComboEver=Math.max(s.bestComboEver||0, combo);
     s.bestSurvivalTime=Math.max(s.bestSurvivalTime||0, survivalSeconds);
     s.bossClicks=(s.bossClicks||0)+bossClicks;
@@ -881,6 +1030,42 @@ const PLAYER = {
     }
     if(newly.length) await STORE.setP('pstats', this.stats);
     return newly;
+  },
+
+  /* ─────────────────────────────────────────
+     publishProfile() — writes a PUBLIC snapshot
+     of this player's stats to shared storage.
+     PLAYER.stats itself lives under a personal
+     key (only this device can read it) — this
+     is the separate, shared copy that lets other
+     players see full info when they tap a name
+     on the leaderboard. Best-effort: failures
+     (e.g. Firebase not configured) are silently
+     ignored, same as every other shared write.
+  ───────────────────────────────────────── */
+  async publishProfile(){
+    if(!this.id) return;
+    try{
+      await this.loadStats();
+      const [cbest, sbest] = await Promise.all([
+        STORE.getP('pbest_classic', {score:0}),
+        STORE.getP('pbest_survival', {score:0})
+      ]);
+      const s=this.stats;
+      await STORE.setS('public_profile:'+this.id, {
+        name: this.name || 'Ẩn danh',
+        topScore: Math.max(cbest.score||0, sbest.score||0),
+        totalRuns: s.totalRuns||0,
+        totalScoreEver: s.totalScoreEver||0,
+        bestComboEver: s.bestComboEver||0,
+        bestSurvivalTime: s.bestSurvivalTime||0,
+        bossClicks: s.bossClicks||0,
+        arenaWins: s.arenaWins||0,
+        worldRecords: s.worldRecords||0,
+        achCount: (s.unlocked||[]).length,
+        memberSince: s.memberSince||null
+      });
+    }catch(e){}
   }
 };
 
@@ -966,8 +1151,52 @@ const ARENA = {
     if(!code) return [];
     const scores = await STORE.getS('arena_scores:'+code, {});
     return Object.entries(scores)
-      .map(([id,e])=>({...e, isMe:id===PLAYER.id}))
+      .map(([id,e])=>({...e, id, isMe:id===PLAYER.id}))
       .sort((a,b)=>b.score-a.score || (b.bestCombo||0)-(a.bestCombo||0));
+  },
+
+  /* ── Room membership — "who has joined" ──
+     Registered once when entering a room (create/join),
+     so players can see who's actually here BEFORE
+     anyone starts playing, not just after someone
+     finishes a run and posts a score. */
+  async registerMember(code){
+    if(!PLAYER.id || !code) return;
+    const key='arena_members:'+code;
+    const members = await STORE.getS(key, {});
+    members[PLAYER.id] = { name: PLAYER.name||'Ẩn danh', joinedAt: Date.now() };
+    await STORE.setS(key, members);
+  },
+
+  async getMembers(code){
+    if(!code) return [];
+    const members = await STORE.getS('arena_members:'+code, {});
+    return Object.entries(members)
+      .map(([id,m])=>({...m, id, isMe:id===PLAYER.id}))
+      .sort((a,b)=>a.joinedAt-b.joinedAt);
+  },
+
+  /* ── Synchronized match start ──
+     Any member can request a synced start: writes a
+     shared "matchStartAt" timestamp (server-corrected,
+     a few seconds in the future) into the room object.
+     Every device polling the room sees the SAME target
+     moment and independently fires startArenaRun() when
+     their own serverNow() reaches it — so everyone's 45s
+     window begins together without needing a realtime
+     socket connection, just a shared clock reference. */
+  async requestSyncStart(code, bufferMs=8000){
+    if(!code) return null;
+    const startAt = STORE.serverNow() + bufferMs;
+    const room = await STORE.getS('arena_room:'+code, {});
+    room.matchStartAt = startAt;
+    await STORE.setS('arena_room:'+code, room);
+    return startAt;
+  },
+
+  async getRoom(code){
+    if(!code) return {};
+    return await STORE.getS('arena_room:'+code, {});
   }
 };
 
@@ -1063,7 +1292,7 @@ const G={
   ct:null,
 
   /* ── PvP Arena state ── */
-  roomCode:null, arenaTimeLeft:45, _roomPoll:null,
+  roomCode:null, arenaTimeLeft:45, _roomPoll:null, _syncTick:null, _seasonTick:null,
 
   /* ── Cursor trail (cosmetic, never touches click hit-testing) ── */
   CUR:{x:0,y:0,tx:0,ty:0,k:.15,on:true,init:false},
@@ -1859,6 +2088,7 @@ const G={
     });
     const newly = await PLAYER.checkAchievements({_runScore:this.score});
     newly.forEach((a,i)=>setTimeout(()=>this.celebrateAchievement(a), 700+i*900));
+    PLAYER.publishProfile();
   },
 
   celebrateAchievement(a){
@@ -1868,7 +2098,9 @@ const G={
   },
 
   /* ─────────────────────────────────────────
-     renderAchievements() — locked/unlocked grid
+     renderAchievements() — locked/unlocked grid,
+     with a live "X/Y" progress bar for locked
+     achievements that track a numeric metric.
   ───────────────────────────────────────── */
   async renderAchievements(){
     await PLAYER.loadStats();
@@ -1876,9 +2108,15 @@ const G={
     _('achProgress').textContent = `${unlocked.length}/${ACHIEVEMENTS.length} mở khóa`;
     _('achList').innerHTML = ACHIEVEMENTS.map(a=>{
       const isUnlocked = unlocked.includes(a.id);
+      let progHTML='';
+      if(!isUnlocked && a.progress){
+        const p=a.progress(PLAYER.stats);
+        const pct=p.target>0 ? Math.min(100,Math.round((p.cur/p.target)*100)) : 0;
+        progHTML=`<div class="achProgBar"><div class="achProgFill" style="width:${pct}%"></div></div><div class="achProgText">${p.cur}/${p.target}</div>`;
+      }
       return `<div class="achRow ${isUnlocked?'unlocked':'locked'}">
         <div class="achIco">${isUnlocked?a.icon:'🔒'}</div>
-        <div><div class="achName">${a.name}</div><div class="achDesc">${a.desc}</div></div>
+        <div style="flex:1"><div class="achName">${a.name}</div><div class="achDesc">${a.desc}</div>${progHTML}</div>
       </div>`;
     }).join('');
   },
@@ -1905,6 +2143,63 @@ const G={
     _('pArenaWins').textContent = s.arenaWins||0;
     _('profMemberSince').textContent = s.memberSince ? `Thành viên từ ${s.memberSince}` : '';
     _('achCount').textContent = (s.unlocked||[]).length;
+  },
+
+  /* ─────────────────────────────────────────
+     onLBNameTap() — entry point from any
+     leaderboard row (main board, PvP room board).
+     Your own row opens the full interactive
+     Profile screen; anyone else's opens a
+     read-only detail card built from their
+     published public snapshot.
+  ───────────────────────────────────────── */
+  onLBNameTap(id, fallbackName){
+    if(id === PLAYER.id){ this.view('profile'); return; }
+    this.showPlayerDetail(id, fallbackName);
+  },
+
+  async showPlayerDetail(id, fallbackName){
+    this._detailReturnTo = this.s;
+    const pnl = _('playerDetailPnl');
+    pnl.innerHTML = `<div class="lbLoading">Đang tải hồ sơ…</div>`;
+    this.view('playerDetail');
+
+    const p = await STORE.getS('public_profile:'+id, null);
+
+    if(!p){
+      pnl.innerHTML = `
+        <div style="font-size:2.4rem">❔</div>
+        <div class="ptt">${esc(fallbackName||'Người chơi')}</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.4);line-height:1.6">
+          Chưa có dữ liệu công khai cho người chơi này —<br>
+          có thể họ chơi từ trước khi tính năng này ra mắt,<br>
+          hoặc chưa hoàn thành ván nào kể từ đó.
+        </div>
+        <button class="pb2 prim" style="margin-top:18px" onclick="G.closePlayerDetail()">← QUAY LẠI</button>`;
+      return;
+    }
+
+    const rank = getRank(p.topScore||0);
+    pnl.innerHTML = `
+      <div style="font-size:2.4rem;line-height:1">${rank.icon}</div>
+      <div class="ptt" style="margin-bottom:2px">${esc(p.name||'Ẩn danh')}</div>
+      <div style="font-size:.8rem;font-weight:700;margin-bottom:20px;color:${rank.color}">Hạng ${rank.name} · ${p.topScore||0} điểm cao nhất</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;text-align:left;margin-bottom:16px">
+        <div class="statBox"><div class="statVal">${p.totalRuns||0}</div><div class="statLbl">Ván đã chơi</div></div>
+        <div class="statBox"><div class="statVal">${(p.totalScoreEver||0).toLocaleString('vi-VN')}</div><div class="statLbl">Tổng điểm trọn đời</div></div>
+        <div class="statBox"><div class="statVal">×${p.bestComboEver||1}</div><div class="statLbl">Combo cao nhất</div></div>
+        <div class="statBox"><div class="statVal">${p.bestSurvivalTime||0}s</div><div class="statLbl">Sống sót lâu nhất</div></div>
+        <div class="statBox"><div class="statVal">${p.bossClicks||0}</div><div class="statLbl">Boss đã hạ</div></div>
+        <div class="statBox"><div class="statVal">${p.arenaWins||0}</div><div class="statLbl">Thắng PvP</div></div>
+        <div class="statBox"><div class="statVal">${p.worldRecords||0}</div><div class="statLbl">Kỷ lục thế giới</div></div>
+        <div class="statBox"><div class="statVal">${p.achCount||0}/${ACHIEVEMENTS.length}</div><div class="statLbl">Thành tựu</div></div>
+      </div>
+      <div style="font-size:.66rem;color:rgba(255,255,255,.35);margin-bottom:16px">${p.memberSince?`Thành viên từ ${p.memberSince}`:''}</div>
+      <button class="pb2 prim" onclick="G.closePlayerDetail()">← QUAY LẠI</button>`;
+  },
+
+  closePlayerDetail(){
+    this.view(this._detailReturnTo || 'lb');
   },
 
   /* ─────────────────────────────────────────
@@ -2210,6 +2505,7 @@ const G={
     const code = await ARENA.create();
     this.roomCode = code;
     ARENA.code = code;
+    await ARENA.registerMember(code);
     this.view('room');
     await this.renderRoomLB();
   },
@@ -2223,6 +2519,7 @@ const G={
     if(!ok){ this.toast('❌ Không tìm thấy phòng','#ff5566'); return; }
     this.roomCode = raw;
     ARENA.code = raw;
+    await ARENA.registerMember(raw);
     _('roomCodeInput').value='';
     this.view('room');
     await this.renderRoomLB();
@@ -2242,6 +2539,7 @@ const G={
 
   leaveRoom(){
     clearInterval(this._roomPoll);
+    clearInterval(this._syncTick);
     this.roomCode=null;
     this.view('modesel');
   },
@@ -2249,14 +2547,32 @@ const G={
   async renderRoomLB(){
     if(!this.roomCode) return;
     _('roomCodeDisplay').textContent=this.roomCode;
+
+    const [members, entries, room] = await Promise.all([
+      ARENA.getMembers(this.roomCode),
+      ARENA.getLB(this.roomCode),
+      ARENA.getRoom(this.roomCode)
+    ]);
+
+    /* ── Member pills — "who has joined" ── */
+    const mc=_('roomMembers');
+    if(members.length){
+      mc.innerHTML = `<div class="roomMemLabel">ĐÃ VÀO PHÒNG (${members.length})</div>
+        <div class="roomMemPills">${members.map(m=>
+          `<span class="roomMemPill${m.isMe?' me':''}">${m.isMe?'👤 ':''}${esc(m.name)}${m.isMe?' (Bạn)':''}</span>`
+        ).join('')}</div>`;
+    }else{
+      mc.innerHTML='';
+    }
+
+    /* ── Score board for this room ── */
     const c=_('roomLB');
-    const entries = await ARENA.getLB(this.roomCode);
     if(!entries.length){
-      c.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.32);padding:20px 0;font-size:.82rem">Chưa ai chơi trong phòng này.<br>Hãy là người đầu tiên! 🚀</div>';
+      c.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.32);padding:16px 0;font-size:.8rem">Chưa ai có điểm trong phòng này.</div>';
     }else{
       const M=['🥇','🥈','🥉'];
       c.innerHTML = entries.slice(0,50).map((e,i)=>`
-        <div class="lbRow${e.isMe?' me':''}">
+        <div class="lbRow${e.isMe?' me':''}" onclick="G.onLBNameTap('${e.id}','${esc(e.name).replace(/'/g,"&#39;")}')" style="cursor:pointer">
           <span class="lbRank">${i<3?M[i]:i+1}</span>
           <span class="lbName">${esc(e.name)}</span>
           ${e.isMe?'<span class="lbMe">Bạn</span>':''}
@@ -2264,10 +2580,57 @@ const G={
           <span class="lbTime">×${e.bestCombo||1}</span>
         </div>`).join('');
     }
-    /* Poll for opponents' scores while the room screen is open —
+
+    this.handleSyncCountdown(room.matchStartAt);
+
+    /* Poll for opponents' scores/members while the room screen is open —
        gives a "live" feel without needing a realtime backend. */
     clearInterval(this._roomPoll);
     this._roomPoll = setInterval(()=>{ if(this.s==='room') this.renderRoomLB(); }, 4000);
+  },
+
+  /* ─────────────────────────────────────────
+     requestSyncStart() — any member can trigger
+     this. Writes a shared target timestamp a few
+     seconds in the future; every device polling
+     the room (including this one) picks it up and
+     counts down to the SAME moment, then fires
+     their own startArenaRun() independently —
+     so everyone's 45s run begins together.
+  ───────────────────────────────────────── */
+  async requestSyncStart(){
+    if(!this.roomCode) return;
+    await ARENA.requestSyncStart(this.roomCode, 8000);
+    await this.renderRoomLB();
+  },
+
+  /* Shows/hides the countdown UI and fires startArenaRun() for THIS
+     device once the shared target moment arrives. Safe to call
+     repeatedly (e.g. every poll) — it just re-syncs the display. */
+  handleSyncCountdown(matchStartAt){
+    clearInterval(this._syncTick);
+    const box=_('roomSyncCountdown'), btns=_('roomStartBtns');
+    const now = STORE.serverNow();
+
+    if(!matchStartAt || matchStartAt<=now){
+      box.style.display='none';
+      btns.style.display='';
+      return;
+    }
+
+    box.style.display='block';
+    btns.style.display='none';
+
+    this._syncTick = setInterval(()=>{
+      const remain = Math.ceil((matchStartAt - STORE.serverNow())/1000);
+      if(remain<=0){
+        clearInterval(this._syncTick);
+        _('roomSyncNum').textContent='0';
+        this.startArenaRun();
+        return;
+      }
+      _('roomSyncNum').textContent=remain;
+    }, 200);
   },
 
   async copyRoomCode(){
@@ -2283,6 +2646,7 @@ const G={
 
   startArenaRun(){
     clearInterval(this._roomPoll);
+    clearInterval(this._syncTick);
     this.mode='arena';
     this.score=0; this.combo=1; this.lct=0; this.bestCombo=0; this.cpa=0; this.level=1;
     this.scoreSaved=false; this.arenaTimeLeft=45; this._isWorldRecordRun=false;
@@ -2348,12 +2712,17 @@ const G={
      view() — screen switcher
   ───────────────────────────────────────── */
   view(name){
-    const map={menu:'s0',modesel:'s6',play:'s1',pause:'s2',cfg:'s3',how:'s4',lb:'s5',gameover:'s7',share:'s8',nameentry:'s9',arenaLobby:'s10',room:'s11',achievements:'s12',profile:'s13'};
-    if(name!=='room') clearInterval(this._roomPoll);
+    const map={menu:'s0',modesel:'s6',play:'s1',pause:'s2',cfg:'s3',how:'s4',lb:'s5',gameover:'s7',share:'s8',nameentry:'s9',arenaLobby:'s10',room:'s11',achievements:'s12',profile:'s13',playerDetail:'s15',seasonReveal:'s16'};
+    if(name!=='room'){ clearInterval(this._roomPoll); clearInterval(this._syncTick); }
+    if(name!=='lb') clearInterval(this._seasonTick);
     document.querySelectorAll('.scr').forEach(el=>el.classList.add('hid'));
     const el=_(map[name]);
     if(el) el.classList.remove('hid');
     this.s=name;
+    /* fsBtn shares the top-left corner with the HUD's SCORE stat during
+       gameplay — hide it there; the Pause screen has its own fullscreen
+       button so the feature stays reachable mid-game. */
+    const fb=_('fsBtn'); if(fb) fb.style.display = (name==='play') ? 'none' : 'flex';
     if(name==='lb') this.renderLB(this.lbTab);
     if(name==='nameentry') setTimeout(()=>_('nameInput').focus(),120);
     if(name==='achievements') this.renderAchievements();
@@ -2371,6 +2740,8 @@ const G={
     this.lbTab=mode;
     _('tabClassic').classList.toggle('act', mode==='classic');
     _('tabSurvival').classList.toggle('act', mode==='survival');
+    this.renderSeasonBanner(mode);
+
     const c=_('lbc');
     c.innerHTML='<div class="lbLoading">Đang tải bảng xếp hạng…</div>';
 
@@ -2385,7 +2756,7 @@ const G={
     const fmtTime=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
     c.innerHTML=entries.slice(0,100).map((e,i)=>`
-      <div class="lbRow${e.isMe?' me':''}">
+      <div class="lbRow${e.isMe?' me':''}" onclick="G.onLBNameTap('${e.id}','${esc(e.name).replace(/'/g,"&#39;")}')" style="cursor:pointer">
         <span class="lbRank">${i<3?M[i]:i+1}</span>
         <span class="lbName">${esc(e.name)}</span>
         ${e.isMe?'<span class="lbMe">Bạn</span>':''}
@@ -2394,7 +2765,84 @@ const G={
       </div>`).join('');
   },
 
+  /* ─────────────────────────────────────────
+     renderSeasonBanner() — live countdown to the
+     current 24h season's end, plus this player's
+     current standing in it. Purely informational
+     during the active season; the FINAL rank only
+     gets "officially" revealed once the season
+     closes (see checkSeasonReveal at boot).
+  ───────────────────────────────────────── */
+  async renderSeasonBanner(mode){
+    const seasonId = getCurrentSeasonId();
+    const boundary = getSeasonBoundary(seasonId);
+
+    clearInterval(this._seasonTick);
+    this._seasonTick = setInterval(()=>{
+      const remain = Math.max(0, boundary - STORE.serverNow());
+      const h=Math.floor(remain/3600000), m=Math.floor((remain%3600000)/60000), s=Math.floor((remain%60000)/1000);
+      const el=_('seasonCountdown');
+      if(el) el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }, 1000);
+
+    const board = await PLAYER.getSeasonLB(mode, seasonId);
+    const myIdx = board.findIndex(e=>e.isMe);
+    const el=_('seasonMyRank');
+    if(el){
+      el.textContent = myIdx>=0
+        ? `Hạng hiện tại của bạn: #${myIdx+1} (${board[myIdx].score} điểm) — chưa chính thức, chờ hết giờ`
+        : 'Bạn chưa có điểm trong mùa này';
+    }
+  },
+
   switchLBTab(mode){ this.renderLB(mode); },
+
+  /* ─────────────────────────────────────────
+     checkSeasonReveal() — called once at boot
+     for returning players. Compares the season
+     id we saw last time (stored locally) against
+     right now: if at least one season has closed
+     since then, fetch that CLOSED season's frozen
+     leaderboard and show the player's final rank
+     in it, exactly once. Returns true if a reveal
+     was shown (caller skips going straight to menu).
+  ───────────────────────────────────────── */
+  async checkSeasonReveal(){
+    const currentSeason = getCurrentSeasonId();
+    const lastSeen = await STORE.getP('plastSeasonSeen', null);
+    await STORE.setP('plastSeasonSeen', currentSeason);
+
+    if(lastSeen===null || lastSeen>=currentSeason) return false;
+
+    const closedSeason = currentSeason - 1;
+    const modeNames = {classic:'♾️ Vô Tận', survival:'❤️ Sinh Tồn'};
+    const results=[];
+    for(const mode of ['classic','survival']){
+      const board = await PLAYER.getSeasonLB(mode, closedSeason);
+      const idx = board.findIndex(e=>e.isMe);
+      if(idx>=0) results.push({mode, rank:idx+1, score:board[idx].score, total:board.length});
+    }
+    if(!results.length) return false;
+
+    const best = results.reduce((a,b)=> a.rank<=b.rank ? a : b);
+    const ico = best.rank===1?'🥇':best.rank===2?'🥈':best.rank===3?'🥉':'🎖️';
+    _('seasonRevealIco').textContent=ico;
+    _('seasonRevealBody').innerHTML = results.map(r=>`
+      <div style="margin-bottom:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,.05)">
+        <div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-bottom:4px">${modeNames[r.mode]||r.mode}</div>
+        <div style="font-size:1.6rem;font-weight:900;color:#ffd700">Hạng #${r.rank}</div>
+        <div style="font-size:.68rem;color:rgba(255,255,255,.4)">${r.score} điểm · trong ${r.total} người chơi</div>
+      </div>`).join('');
+
+    this.view('seasonReveal');
+    this.confetti(70);
+    this.sfx('worldrecord');
+    return true;
+  },
+
+  dismissSeasonReveal(){
+    this.view('menu');
+  },
 
   /* ─────────────────────────────────────────
      confirmName() / skipName() — first visit
@@ -2439,6 +2887,30 @@ const G={
     this.streamerMode=!this.streamerMode;
     el.classList.toggle('on', this.streamerMode);
     _('W').classList.toggle('streamer', this.streamerMode);
+  },
+
+  /* ─────────────────────────────────────────
+     toggleFullscreen() — fullscreens #W itself
+     (not the whole page) so the Fullscreen API
+     result matches exactly what the CSS
+     #W:fullscreen rule expects. Cross-browser
+     prefixed; silently no-ops on browsers/
+     contexts where the API is unavailable
+     (e.g. some in-app webviews) instead of
+     throwing.
+  ───────────────────────────────────────── */
+  toggleFullscreen(){
+    const el = _('W');
+    const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    try{
+      if(!isFs){
+        const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if(req) req.call(el); else this.toast('Trình duyệt không hỗ trợ toàn màn hình','#ff8866');
+      }else{
+        const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+        if(exit) exit.call(document);
+      }
+    }catch(e){}
   }
 };
 
@@ -2552,6 +3024,18 @@ _('arena').addEventListener('click', e=>{
     requestAnimationFrame(frame);
   })();
 })();
+
+/* Keep the fullscreen icon accurate regardless of how fullscreen was
+   exited (button, Esc key, browser gesture) */
+['fullscreenchange','webkitfullscreenchange'].forEach(evt=>{
+  document.addEventListener(evt, ()=>{
+    const btn=_('fsBtn');
+    if(!btn) return;
+    const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    btn.textContent = isFs ? '⛝' : '⛶';
+    btn.title = isFs ? 'Thoát toàn màn hình' : 'Toàn màn hình';
+  });
+});
 
 /* ── Boot — hide everything until identity resolves ── */
 document.querySelectorAll('.scr').forEach(el=>el.classList.add('hid'));
